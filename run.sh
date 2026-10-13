@@ -1,22 +1,35 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -Eeuo pipefail
 
-# Carga variables de entorno
-[ -f .env ] && export $(grep -v '^#' .env | xargs)
+cd "$(dirname "$0")"
+
+if [[ -f .env ]]; then
+  set -a
+  # .env debe contener asignaciones shell válidas.
+  source .env
+  set +a
+fi
 
 case "${1:-serve}" in
-  serve)
-    exec python sycophancy_api.py serve --host "${AUDIT_HOST:-0.0.0.0}" --port "${AUDIT_PORT:-8000}" "${@:2}"
+  install)
+    python -m pip install -r requirements.txt
     ;;
+
+  serve)
+    shift || true
+    exec python sycophancy_api.py serve 
+      --host "${AUDIT_HOST:-127.0.0.1}" 
+      --port "${AUDIT_PORT:-8000}" 
+      "$@"
+    ;;
+
   run)
-    shift
+    shift || true
     exec python sycophancy_api.py run "$@"
     ;;
-  install)
-    pip install -r requirements.txt
-    ;;
+
   *)
-    echo "Uso: ./run.sh {install|serve|run [args]}"
-    exit 1
+    echo "Uso: ./run.sh {install|serve|run [argumentos]}"
+    exit 2
     ;;
 esac
