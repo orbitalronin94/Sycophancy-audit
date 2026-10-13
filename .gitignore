@@ -1,0 +1,23 @@
+# Secretos
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+
+# Datos locales y resultados
+audit.db
+audit.db-shm
+audit.db-wal
+informe.md
+reports/
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
