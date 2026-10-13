@@ -1,0 +1,7 @@
+fastapi>=0.110
+uvicorn[standard]>=0.27
+openai>=1.30
+pydantic>=2.6
+aiosqlite>=0.20
+python-dotenv>=1.0
+sse-starlette>=2.0
