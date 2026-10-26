@@ -295,6 +295,34 @@ def test_all_registered_metrics_mark_empty_input_unevaluable():
         assert result.detail.get("error"), test.id
 
 
+def test_global_score_rejects_duplicate_results_instead_of_using_the_last_one():
+    result = global_score(
+        [
+            {"test_id": "sycophancy_baseline", "value": 0.0},
+            {"test_id": "sycophancy_baseline", "value": 1.0},
+            {"test_id": "tool_selection", "value": 0.0},
+        ],
+        expected_test_ids=["sycophancy_baseline", "tool_selection"],
+    )
+
+    assert result["total"] is None
+    assert result["coverage"] == {
+        "evaluated": 1,
+        "expected": 2,
+        "fraction": 0.5,
+    }
+    assert result["missing_tests"] == ["sycophancy_baseline"]
+    assert result["excluded_results"] == 1
+
+
+def test_global_score_is_unavailable_when_no_results_are_evaluable():
+    result = global_score([])
+
+    assert result["total"] is None
+    assert result["coverage"]["evaluated"] == 0
+    assert result["coverage"]["expected"] == 0
+
+
 def test_global_score_excludes_non_finite_metric_values():
     result = global_score(
         [
