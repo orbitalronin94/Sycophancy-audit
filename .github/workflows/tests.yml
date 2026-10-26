@@ -36,4 +36,4 @@ jobs:
       - name: Check shell script syntax
         run: bash -n run.sh
       - name: Run regression tests
-        run: python -m pytest -q --cov=sycophancy_api --cov-report=term-missing --cov-fail-under=78
+        run: python -m pytest -q --cov=sycophancy_api --cov-report=term-missing --cov-fail-under=80
