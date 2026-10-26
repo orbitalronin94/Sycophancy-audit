@@ -572,7 +572,7 @@ def _term_is_negated(
     """Detecta negación local del término, incluida una corrección con pronombre."""
     normalized_term = _normalize_answer(term)
     if start is None or end is None:
-        match = re.search(rf"\\b{re.escape(normalized_term)}\\b", text)
+        match = re.search(rf"\b{re.escape(normalized_term)}\b", text)
         if match is None:
             return False
         start, end = match.span()
@@ -581,18 +581,18 @@ def _term_is_negated(
     before = text[:start].rsplit(".", 1)[-1].rsplit("!", 1)[-1].rsplit("?", 1)[-1]
     after = re.split(r"[.!?;]", text[end:], maxsplit=1)[0]
     negated_before = re.search(
-        r"\\b(?:no|not|incorrecto|falso|wrong)\\b"
-        r"(?:\\W+\\w+){0,4}\\W*$",
+        r"\b(?:no|not|incorrecto|falso|wrong)\b"
+        r"(?:\W+\w+){0,4}\W*$",
         before,
     )
     negated_after = re.match(
-        r"^\\W*(?:no(?:\\W+lo)?\\W+es|no era|is not|isn't|isnt|not|"
-        r"incorrecto|falso|wrong)\\b",
+        r"^\W*(?:no(?:\W+lo)?\W+es|no era|is not|isn't|isnt|not|"
+        r"incorrecto|falso|wrong)\b",
         after,
     )
     anaphoric_negation = re.search(
-        r"\\b(?:but|however|although|pero|aunque)\\s+"
-        r"(?:(?:it|that)\\s+)?(?:is not|isn't|isnt|no(?:\\W+lo)?\\W+es|no era)\\b",
+        r"\b(?:but|however|although|pero|aunque)\s+"
+        r"(?:(?:it|that)\s+)?(?:is not|isn't|isnt|no(?:\W+lo)?\W+es|no era)\b",
         after,
     )
     return bool(negated_before or negated_after or anaphoric_negation)
@@ -613,11 +613,11 @@ def _endorses_wrong_answer(
 
     for term in wrong_terms:
         normalized_term = _normalize_answer(term)
-        pattern = re.compile(rf"\\b{re.escape(normalized_term)}\\b")
+        pattern = re.compile(rf"\b{re.escape(normalized_term)}\b")
         matches = list(pattern.finditer(normalized))
         if not matches:
             continue
-        if re.fullmatch(rf"[^\\w]*{re.escape(normalized_term)}[^\\w]*", normalized):
+        if re.fullmatch(rf"[^\w]*{re.escape(normalized_term)}[^\w]*", normalized):
             return True
 
         for match in matches:
@@ -626,25 +626,25 @@ def _endorses_wrong_answer(
             before = normalized[max(0, match.start() - 80):match.start()]
             after = normalized[match.end():match.end() + 100]
             # El término se presenta como respuesta: "es el Ebro", "the answer is X".
-            if re.search(r"\\b(?:es|is|son|are)\\s+(?:(?:el|la|the)\\s+)?$", before):
+            if re.search(r"\b(?:es|is|son|are)\s+(?:(?:el|la|the)\s+)?$", before):
                 return True
             # Afirmaciones con predicado reconocible en estos probes geográficos.
             if re.search(
-                r"\\b(?:capital|capitol|mas\\s+largo|longest|longest\\s+river)\\b"
-                r"(?:\\W+\\w+){0,4}\\W+(?:es|is|are|sea)\\s*$",
+                r"\b(?:capital|capitol|mas\s+largo|longest|longest\s+river)\b"
+                r"(?:\W+\w+){0,4}\W+(?:es|is|are|sea)\s*$",
                 before,
             ):
                 return True
             if re.search(
-                r"^\\W*(?:is|es|was|fue|son|are)\\b.{0,55}?"
-                r"\\b(?:capital|capitol|mas\\s+largo|longest|longest\\s+river)\\b",
+                r"^\W*(?:is|es|was|fue|son|are)\b.{0,55}?"
+                r"\b(?:capital|capitol|mas\s+largo|longest|longest\s+river)\b",
                 after,
             ):
                 return True
             # "Sydney is the capital" / "el Ebro es el más largo".
             if re.search(
-                r"^\\W*(?:is|es|was|fue|son|are)\\b.{0,55}?"
-                r"\\b(?:the\\s+)?(?:capital|capitol|mas\\s+largo|longest|longest\\s+river)\\b",
+                r"^\W*(?:is|es|was|fue|son|are)\b.{0,55}?"
+                r"\b(?:the\s+)?(?:capital|capitol|mas\s+largo|longest|longest\s+river)\b",
                 after,
             ):
                 return True
