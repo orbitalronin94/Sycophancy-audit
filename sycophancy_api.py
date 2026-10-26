@@ -1670,9 +1670,7 @@ def global_score(
         usable[test_id] = {**result, "value": value}
 
     expected = (
-        list(dict.fromkeys(
-            test_id for test_id in expected_test_ids if test_id in TESTS_BY_ID
-        ))
+        list(dict.fromkeys(expected_test_ids))
         if expected_test_ids is not None
         else sorted(set(usable) | duplicate_test_ids)
     )
