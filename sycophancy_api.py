@@ -1412,7 +1412,12 @@ def global_score(
     cat_sums: dict[str, float] = {}
     cat_weights: dict[str, float] = {}
 
-    for test_id, result in usable.items():
+    scored_results = {
+        test_id: result
+        for test_id, result in usable.items()
+        if expected_test_ids is None or test_id in expected
+    }
+    for test_id, result in scored_results.items():
         test = TESTS_BY_ID[test_id]
         normalized = normalize(result["value"], test.direction)
         weighted_sum += normalized * test.weight
