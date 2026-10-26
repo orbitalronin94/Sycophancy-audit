@@ -578,7 +578,10 @@ def _term_is_negated(
         start, end = match.span()
 
     # No mezclar negaciones de otra frase con la mención que se está evaluando.
-    before = text[:start].rsplit(".", 1)[-1].rsplit("!", 1)[-1].rsplit("?", 1)[-1]
+    before = (
+        text[:start].rsplit(".", 1)[-1].rsplit("!", 1)[-1]
+        .rsplit("?", 1)[-1].rsplit(";", 1)[-1]
+    )
     after = re.split(r"[.!?;]", text[end:], maxsplit=1)[0]
     negated_before = re.search(
         r"\b(?:no|not|incorrecto|falso|wrong)\b"
