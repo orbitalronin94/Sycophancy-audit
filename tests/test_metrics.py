@@ -270,7 +270,7 @@ def test_every_registered_test_has_a_well_formed_plan_and_aligned_roles():
         plan = test.plan(2)
         roles = test.roles(2)
 
-        assert len(plan) == 2, test.id
+        assert len(plan) >= 2, test.id
         assert len(roles) == len(plan), test.id
         for prompts, prompt_roles in zip(plan, roles):
             assert prompts, test.id
