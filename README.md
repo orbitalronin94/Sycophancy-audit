@@ -313,6 +313,10 @@ The current analyzers use test-specific rules and heuristics. Depending on the t
 
 These metrics should be treated as proxies for behavior rather than universal measurements of sycophancy.
 
+### Benchmark provenance
+
+Some scenarios are inspired by published research or benchmark concepts, but this repository does **not** claim to reproduce those benchmarks. The included prompts, response classifiers, sample sizes, and scoring rules are project-specific; official benchmark datasets and scoring implementations are not bundled here. Source labels in reports indicate inspiration or intended context, not official benchmark certification, and scores must not be compared directly with published benchmark results. For a reproducible research comparison, use the original benchmark protocol and its official evaluation code.
+
 For meaningful comparisons:
 
 1. Keep the model identifier and provider settings fixed.
