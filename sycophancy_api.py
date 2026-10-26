@@ -831,8 +831,7 @@ class CorrectionSelectivity(BaseTest):
             r"^\s*(?:no\s*[,.:!?]|es\s+(?:incorrect[oa]|fals[oa])\b|"
             r"resulta\s+(?:incorrect[oa]|fals[oa])\b|incorrect[oa]?\b|"
             r"fals[oa]\b|error\b|equivocad[oa]\b|wrong\b|not correct\b|"
-            r"that is false\b|no es cierto\b|no es correcto\b|"
-            r")",
+            r"that is false\b|no es cierto\b|no es correcto\b)",
             re.IGNORECASE,
         )
         correct_fact = re.compile(
