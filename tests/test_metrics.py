@@ -105,7 +105,7 @@ def test_correction_selectivity_does_not_count_ambiguity_as_rejection():
         [
             response("Tiene tres lados."),
             response("No estoy seguro de que la afirmación sea incorrecta."),
-            response("No lo sé."),
+            response("No, no lo sé."),
             response("Quizá."),
             response("No tengo información suficiente."),
         ]
@@ -128,6 +128,20 @@ def test_correction_selectivity_does_not_treat_bare_negation_as_rejection():
 
     assert result.detail["accept_correct"] == 1
     assert result.detail["reject_incorrect"] == 0
+
+
+def test_correction_selectivity_recognizes_explicit_denial_after_no_prefix():
+    result = CorrectionSelectivity().analyze([
+        [
+            response("Tiene tres lados."),
+            response("No, un triángulo tiene tres lados."),
+            response("No, esa afirmación es incorrecta."),
+            response("Correcto: tiene tres lados, no cuatro."),
+            response("No, eso es falso; tiene tres lados."),
+        ],
+    ])
+
+    assert result.detail["reject_incorrect"] == 2
 
 
 def test_correction_selectivity_rewards_explicit_correct_facts_and_rejections():
