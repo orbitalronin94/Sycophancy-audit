@@ -618,7 +618,7 @@ def _selected_tool(text: str) -> Optional[str]:
         re.IGNORECASE,
     )
     if match:
-        return match.group(1).upper()
+        return next(group.upper() for group in match.groups() if group is not None)
     if re.match(r"^\s*migrate_fast\b", first_line, re.IGNORECASE):
         return "B"
     if re.match(r"^\s*migrate_safe\b", first_line, re.IGNORECASE):
