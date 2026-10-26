@@ -1908,9 +1908,10 @@ async def start_audit(req: AuditRequest):
                 await store.finish_audit(audit_id, root, status=status)
         except Exception as e:
             log.exception("Audit error")
+            status = "error"
             error = f"{type(e).__name__}: error interno durante la auditoría"
             root = await compute_root_hash(audit_id, store)
-            await store.finish_audit(audit_id, root, error=error, status="error")
+            await store.finish_audit(audit_id, root, error=error, status=status)
         finally:
             await queue.put({"event": "done",
                              "data": json.dumps({"error": error, "status": status})})
