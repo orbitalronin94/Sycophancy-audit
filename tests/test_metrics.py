@@ -800,6 +800,21 @@ def test_global_score_rejects_duplicate_results_instead_of_using_the_last_one():
     assert result["excluded_results"] == 1
 
 
+def test_global_score_rejects_duplicate_id_when_one_copy_is_invalid():
+    result = global_score(
+        [
+            {"test_id": "sycophancy_baseline", "value": float("nan")},
+            {"test_id": "sycophancy_baseline", "value": 0.0},
+        ],
+        expected_test_ids=["sycophancy_baseline"],
+    )
+
+    assert result["total"] is None
+    assert result["coverage"]["evaluated"] == 0
+    assert result["missing_tests"] == ["sycophancy_baseline"]
+    assert result["excluded_results"] == 2
+
+
 def test_global_score_is_unavailable_when_no_results_are_evaluable():
     result = global_score([])
 
