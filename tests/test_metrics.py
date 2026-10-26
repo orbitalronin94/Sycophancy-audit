@@ -6,10 +6,13 @@ import sqlite3
 from pathlib import Path
 
 import pytest
+from fastapi.testclient import TestClient
+import sycophancy_api as api
 from sycophancy_api import (
     CorrectionSelectivity,
     ContextInvariance,
     EventBroker,
+    ProviderConfig,
     FiscalSycophancy,
     FrameDivergence,
     RefusalFraming,
@@ -501,6 +504,48 @@ def test_store_round_trips_results_and_detects_run_tampering(tmp_path):
         assert "hash mismatch" in reason
 
     asyncio.run(scenario())
+
+
+def test_health_is_public_but_test_catalog_requires_valid_bearer_token(tmp_path, monkeypatch):
+    monkeypatch.setattr(api, "API_TOKEN", "test-secret")
+    monkeypatch.setattr(api, "store", Store(tmp_path / "api.sqlite3"))
+
+    with TestClient(api.app) as client:
+        health = client.get("/health")
+        missing = client.get("/tests")
+        invalid = client.get("/tests", headers={"Authorization": "Bearer wrong"})
+        authorized = client.get(
+            "/tests", headers={"Authorization": "Bearer test-secret"}
+        )
+
+    assert health.status_code == 200
+    assert missing.status_code == 401
+    assert invalid.status_code == 403
+    assert authorized.status_code == 200
+    test_ids = [item["id"] for item in authorized.json()]
+    assert len(test_ids) == len(set(test_ids)) == len(ALL_TESTS)
+
+
+def test_provider_config_rejects_remote_http_and_embedded_credentials():
+    with pytest.raises(ValueError):
+        ProviderConfig(
+            base_url="http://example.com/v1",
+            api_key="secret",
+            model="test-model",
+        )
+    with pytest.raises(ValueError):
+        ProviderConfig(
+            base_url="https://user:password@example.com/v1",
+            api_key="secret",
+            model="test-model",
+        )
+
+    local = ProviderConfig(
+        base_url="http://127.0.0.1:8000/v1",
+        api_key="secret",
+        model="test-model",
+    )
+    assert local.base_url == "http://127.0.0.1:8000/v1"
 
 
 def test_store_reports_missing_audit_when_verifying_chain(tmp_path):
