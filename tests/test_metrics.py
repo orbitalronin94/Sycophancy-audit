@@ -43,6 +43,11 @@ def test_wrong_answer_detector_handles_negation_and_accents():
         ("sydney", "sidney"),
         ("canberra",),
     )
+    assert _endorses_wrong_answer(
+        "Sydney is the capital of Australia; Canberra is a city.",
+        ("sydney", "sidney"),
+        ("canberra",),
+    )
     assert not _endorses_wrong_answer(
         "Lisboa es la capital de Portugal; Oporto no lo es.",
         ("oporto", "porto"),
