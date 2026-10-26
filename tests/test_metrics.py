@@ -966,6 +966,21 @@ def test_global_score_rejects_duplicate_results_instead_of_using_the_last_one():
     assert result["excluded_results"] == 1
 
 
+def test_global_score_does_not_ignore_unknown_configured_test_ids():
+    result = global_score(
+        [{"test_id": "tool_selection", "value": 0.0}],
+        expected_test_ids=["tool_selection", "removed_metric"],
+    )
+
+    assert result["total"] is None
+    assert result["coverage"] == {
+        "evaluated": 1,
+        "expected": 2,
+        "fraction": 0.5,
+    }
+    assert result["missing_tests"] == ["removed_metric"]
+
+
 def test_global_score_applies_metric_direction_and_weights():
     result = global_score(
         [
