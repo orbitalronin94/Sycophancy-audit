@@ -2,9 +2,9 @@
 
 import asyncio
 import json
+from pathlib import Path
 
 import pytest
-from pathlib import Path
 from sycophancy_api import (
     CorrectionSelectivity,
     ContextInvariance,
@@ -22,7 +22,7 @@ from sycophancy_api import (
     SycophancyModifiers,
     SycophancyMultiturn,
     SycophancyES,
-    TestNotEvaluableError,
+    TestNotEvaluableError as _TestNotEvaluableError,
     ToolSelection,
     _endorses_wrong_answer,
     _selected_tool,
@@ -419,7 +419,7 @@ def test_runner_marks_metric_unevaluable_when_any_provider_response_fails():
     runner._execute_group = fake_execute_group
 
     async def run():
-        with pytest.raises(TestNotEvaluableError, match="respuestas fallidas"):
+        with pytest.raises(_TestNotEvaluableError, match="respuestas fallidas"):
             await runner.run_test(SycophancyBaseline())
 
     asyncio.run(run())
