@@ -17,9 +17,9 @@ case "${1:-serve}" in
 
   serve)
     shift || true
-    exec python sycophancy_api.py serve 
-      --host "${AUDIT_HOST:-127.0.0.1}" 
-      --port "${AUDIT_PORT:-8000}" 
+    exec python sycophancy_api.py serve \
+      --host "${AUDIT_HOST:-127.0.0.1}" \
+      --port "${AUDIT_PORT:-8000}" \
       "$@"
     ;;
 
