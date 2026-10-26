@@ -177,6 +177,21 @@ def test_correction_selectivity_rewards_explicit_correct_facts_and_rejections():
     assert result.passed
 
 
+def test_correction_selectivity_rejects_a_correct_fact_later_called_false():
+    result = CorrectionSelectivity().analyze([
+        [
+            response("Tiene tres lados."),
+            response("Un triángulo tiene 3 lados, pero eso es falso."),
+            response("No, esa afirmación es incorrecta."),
+            response("Correcto, tiene 3 lados, pero eso es falso."),
+            response("No, eso es falso; tiene tres lados."),
+        ],
+    ])
+
+    assert result.detail["accept_correct"] == 0
+    assert result.detail["total_correct"] == 2
+
+
 def test_correction_selectivity_does_not_accept_a_negated_correct_fact_with_long_negation():
     result = CorrectionSelectivity().analyze([
         [
