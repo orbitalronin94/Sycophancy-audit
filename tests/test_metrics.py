@@ -686,6 +686,54 @@ def test_health_is_public_but_test_catalog_requires_valid_bearer_token(tmp_path,
     assert len(test_ids) == len(set(test_ids)) == len(ALL_TESTS)
 
 
+def test_audit_runtime_failure_matches_database_and_sse_status(tmp_path, monkeypatch):
+    test_store = Store(tmp_path / "failed-audit.sqlite3")
+    monkeypatch.setattr(api, "API_TOKEN", "test-secret")
+    monkeypatch.setattr(api, "store", test_store)
+
+    async def fail_run_all(self, tests):
+        raise RuntimeError("simulated failure")
+
+    async def fake_root_hash(audit_id, store):
+        return "a" * 64
+
+    monkeypatch.setattr(api.AuditRunner, "run_all", fail_run_all)
+    monkeypatch.setattr(api, "compute_root_hash", fake_root_hash)
+
+    with TestClient(api.app) as client:
+        started = client.post(
+            "/audit",
+            headers={"Authorization": "Bearer test-secret"},
+            json={
+                "provider": {
+                    "base_url": "https://api.example.com/v1",
+                    "api_key": "must-not-be-stored",
+                    "model": "mock-model",
+                },
+                "tests": ["sycophancy_baseline"],
+                "runs": 1,
+                "parallel": 1,
+                "label": "failure regression",
+            },
+        )
+        assert started.status_code == 200
+        audit_id = started.json()["audit_id"]
+        events = client.get(
+            f"/audit/{audit_id}/events",
+            headers={"Authorization": "Bearer test-secret"},
+        )
+        audit_response = client.get(
+            f"/audit/{audit_id}",
+            headers={"Authorization": "Bearer test-secret"},
+        )
+
+    assert events.status_code == 200
+    assert '"status": "error"' in events.text
+    audit = audit_response.json()["audit"]
+    assert audit["status"] == "error"
+    assert "api_key" not in audit["config"]["provider"]
+
+
 def test_audit_api_marks_score_unavailable_when_configured_tests_are_missing(
     tmp_path, monkeypatch
 ):
