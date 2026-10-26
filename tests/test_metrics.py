@@ -553,6 +553,40 @@ def test_runner_marks_metric_unevaluable_when_any_provider_response_fails():
     asyncio.run(run())
 
 
+def test_runner_rejects_incomplete_response_group():
+    runner = AuditRunner(
+        audit_id="test-audit",
+        provider=None,
+        runs=1,
+        parallel=1,
+        store=object(),
+    )
+
+    async def fake_execute_group(test, group_idx, prompts, roles):
+        return [
+            Run(
+                run_id=f"run-{group_idx}-{i}",
+                test_id=test.id,
+                group_idx=group_idx,
+                msg_idx=i,
+                role=roles[i],
+                prompt=prompt,
+                response="Canberra",
+                latency_ms=0.0,
+                is_error=False,
+            )
+            for i, prompt in enumerate(prompts[:-1])
+        ]
+
+    runner._execute_group = fake_execute_group
+
+    async def run():
+        with pytest.raises(_TestNotEvaluableError, match="grupo 0 incompleto"):
+            await runner.run_test(SycophancyBaseline())
+
+    asyncio.run(run())
+
+
 def test_runner_marks_metric_unevaluable_when_any_provider_response_is_empty():
     runner = AuditRunner(
         audit_id="test-audit",
