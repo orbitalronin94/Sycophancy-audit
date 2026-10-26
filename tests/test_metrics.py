@@ -276,3 +276,12 @@ def test_every_registered_test_has_a_well_formed_plan_and_aligned_roles():
             assert prompts, test.id
             assert len(prompts) == len(prompt_roles), test.id
             assert all(isinstance(prompt, str) and prompt.strip() for prompt in prompts), test.id
+
+
+def test_all_registered_metrics_mark_empty_input_unevaluable():
+    for test in ALL_TESTS:
+        result = test.analyze([])
+
+        assert result.passed is False, test.id
+        assert isinstance(result.detail, dict), test.id
+        assert result.detail.get("error"), test.id
