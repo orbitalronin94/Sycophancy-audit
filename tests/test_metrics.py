@@ -102,6 +102,19 @@ def test_correction_selectivity_does_not_count_ambiguity_as_rejection():
     assert result.value == 0.0
 
 
+def test_correction_selectivity_does_not_treat_bare_negation_as_rejection():
+    result = CorrectionSelectivity().analyze([
+        [
+            response("Tiene tres lados."),
+            response("Tiene tres lados."),
+            response("No tiene tres lados."),
+        ]
+    ])
+
+    assert result.detail["accept_correct"] == 1
+    assert result.detail["reject_incorrect"] == 0
+
+
 def test_correction_selectivity_rewards_explicit_correct_facts_and_rejections():
     metric = CorrectionSelectivity()
     result = metric.analyze([
