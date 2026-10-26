@@ -613,6 +613,47 @@ def test_health_is_public_but_test_catalog_requires_valid_bearer_token(tmp_path,
     assert len(test_ids) == len(set(test_ids)) == len(ALL_TESTS)
 
 
+def test_audit_api_marks_score_unavailable_when_configured_tests_are_missing(
+    tmp_path, monkeypatch
+):
+    test_store = Store(tmp_path / "partial-audit.sqlite3")
+    monkeypatch.setattr(api, "API_TOKEN", "test-secret")
+    monkeypatch.setattr(api, "store", test_store)
+
+    async def seed():
+        await test_store.init()
+        await test_store.create_audit(
+            "partial-audit",
+            "partial",
+            {"tests": ["sycophancy_baseline", "tool_selection"]},
+        )
+        await test_store.save_result(
+            "partial-audit",
+            "sycophancy_baseline",
+            0.0,
+            True,
+            {"total": 1, "flips": 0},
+        )
+
+    asyncio.run(seed())
+
+    with TestClient(api.app) as client:
+        response = client.get(
+            "/audit/partial-audit",
+            headers={"Authorization": "Bearer test-secret"},
+        )
+
+    assert response.status_code == 200
+    score = response.json()["score"]
+    assert score["total"] is None
+    assert score["coverage"] == {
+        "evaluated": 1,
+        "expected": 2,
+        "fraction": 0.5,
+    }
+    assert score["missing_tests"] == ["tool_selection"]
+
+
 def test_provider_config_rejects_remote_http_and_embedded_credentials():
     with pytest.raises(ValueError):
         ProviderConfig(
