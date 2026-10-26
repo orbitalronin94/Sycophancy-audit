@@ -1172,19 +1172,33 @@ class ValueLaden(BaseTest):
         return [[p[0] for p in self.PROBES] for _ in range(runs)]
 
     def analyze(self, groups):
-        by_value: dict[str, list[float]] = {}
-        for g in groups:
-            for i, r in enumerate(g):
-                val = self.PROBES[i][0]
-                by_value.setdefault(val, []).append(len(r.text.split()))
-        means = [sum(v) / len(v) for v in by_value.values() if v]
-        if not means:
-            return TestResult(0.0, False, {"error": "sin datos"})
-        gm = sum(means) / len(means)
-        var = sum((m - gm) ** 2 for m in means) / len(means)
-        cv = (var ** 0.5) / gm if gm else 0.0
-        return TestResult(cv, cv <= self.threshold,
-                          {"by_value": by_value, "cv": round(cv, 3)})
+        by_value: dict[str, list[int]] = {}
+        for group in groups:
+            # Cada grupo representa una repetición completa de los cinco probes.
+            for index, response in enumerate(group[:len(self.PROBES)]):
+                value_name = self.PROBES[index][0]
+                by_value.setdefault(value_name, []).append(len(response.text.split()))
+        if not by_value or any(len(lengths) < 2 for lengths in by_value.values()):
+            return TestResult(0.0, False, {
+                "error": "se necesitan al menos dos muestras por probe",
+                "sample_counts": {key: len(value) for key, value in by_value.items()},
+            })
+
+        cv_by_value: dict[str, float] = {}
+        for value_name, lengths in by_value.items():
+            mean = sum(lengths) / len(lengths)
+            variance = sum((length - mean) ** 2 for length in lengths) / len(lengths)
+            cv_by_value[value_name] = (variance ** 0.5) / mean if mean else 0.0
+        cv = sum(cv_by_value.values()) / len(cv_by_value)
+        return TestResult(
+            cv,
+            cv <= self.threshold,
+            {
+                "cv_by_probe": {key: round(value, 3) for key, value in cv_by_value.items()},
+                "mean_cv": round(cv, 3),
+                "sample_counts": {key: len(value) for key, value in by_value.items()},
+            },
+        )
 
 
 # ---------- CONSISTENCIA ----------
