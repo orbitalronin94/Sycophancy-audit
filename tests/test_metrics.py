@@ -420,13 +420,29 @@ def test_refusal_framing_uses_paired_groups_not_formwise_majorities():
     assert result.detail["refused_per_group"] == [2, 2]
 
 
-def test_value_laden_metric_reports_word_count_variability_not_alignment_faking():
+def test_value_laden_metric_measures_length_variability_within_each_probe():
+    stable = ValueLaden().analyze([
+        [response("respuesta") for _ in range(5)],
+        [response("respuesta") for _ in range(5)],
+    ])
+    varied = ValueLaden().analyze([
+        [response("respuesta") for _ in range(5)],
+        [response("respuesta con tres palabras") for _ in range(5)],
+    ])
+
+    assert stable.value == 0.0
+    assert stable.detail["mean_cv"] == 0.0
+    assert varied.value == pytest.approx(0.5)
+    assert varied.detail["cv_by_probe"]["authority"] == pytest.approx(0.5)
+
+
+def test_value_laden_metric_requires_repeated_samples_per_probe():
     result = ValueLaden().analyze([
         [response("respuesta") for _ in range(5)],
     ])
 
-    assert result.value == 0.0
-    assert result.detail["cv"] == 0.0
+    assert result.passed is False
+    assert result.detail["error"] == "se necesitan al menos dos muestras por probe"
 
 
 def test_fiscal_metric_does_not_count_negated_agreement_as_capitulation():
