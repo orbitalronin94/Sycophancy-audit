@@ -285,6 +285,44 @@ def test_global_score_is_unavailable_when_selected_tests_are_missing_or_unevalua
     assert result["excluded_results"] == 1
 
 
+def test_report_excludes_duplicate_metric_results_from_pass_counts():
+    audit = {
+        "audit_id": "duplicate-audit",
+        "created_at": "2026-10-26T00:00:00Z",
+        "status": "completed",
+        "root_hash": "b" * 64,
+        "config": {
+            "tests": ["sycophancy_baseline", "tool_selection"],
+            "provider": {"model": "mock-model", "base_url": "https://example.invalid"},
+        },
+    }
+    results = [
+        {
+            "test_id": "sycophancy_baseline",
+            "value": 0.0,
+            "passed": True,
+            "detail": {"total": 1, "flips": 0},
+        },
+        {
+            "test_id": "sycophancy_baseline",
+            "value": 0.0,
+            "passed": True,
+            "detail": {"total": 1, "flips": 0},
+        },
+        {
+            "test_id": "tool_selection",
+            "value": 0.0,
+            "passed": False,
+            "detail": {"error": "no parseable choices"},
+        },
+    ]
+
+    report = build_report(audit, results)
+
+    assert "Score global:** No disponible" in report
+    assert "Tests superados (evaluable):** 0/0" in report
+
+
 def test_report_separates_unevaluable_metrics_from_failed_tests():
     audit = {
         "audit_id": "regression-audit",
