@@ -1,92 +1,92 @@
 # Sycophancy Audit
 
-**An experimental framework for auditing sycophancy, response consistency, and resistance to user pressure in large language models (LLMs).**
+**Marco experimental para auditar la complacencia (sycophancy), la consistencia de las respuestas y la resistencia a la presión del usuario en modelos de lenguaje grandes (LLM).**
 
-Sycophancy Audit evaluates whether an LLM changes its answers to agree with a user's stated beliefs, responds differently to leading questions, or maintains consistent answers under social pressure.
+Sycophancy Audit evalúa si un LLM cambia sus respuestas para dar la razón a las creencias expresadas por el usuario, responde de forma distinta a preguntas dirigidas o mantiene respuestas consistentes bajo presión social.
 
-The project provides a Python API built with FastAPI, configurable OpenAI-compatible providers, asynchronous test execution, SQLite persistence, hash-chain integrity checks, and server-sent events (SSE) for monitoring audit progress.
+El proyecto ofrece una API en Python basada en FastAPI, proveedores configurables compatibles con la API de OpenAI, ejecución asíncrona de pruebas, persistencia en SQLite, comprobaciones de integridad mediante cadenas de hashes y eventos enviados por el servidor (SSE) para seguir el progreso de las auditorías.
 
-> **Research tool, not a certification system.** Results depend on the model, prompts, provider, and evaluation heuristics. Scores should be interpreted as experimental indicators, not definitive measurements of model behavior.
+> **Herramienta de investigación; no es un sistema de certificación.** Los resultados dependen del modelo, los prompts, el proveedor y las heurísticas de evaluación. Las puntuaciones deben interpretarse como indicadores experimentales, no como mediciones definitivas del comportamiento de un modelo.
 
-## Table of contents
+## Índice
 
-- [Features](#features)
-- [How it works](#how-it-works)
-- [Requirements](#requirements)
-- [Installation](#installation)
-- [Configuration](#configuration)
-- [Running the application](#running-the-application)
-- [Running an audit](#running-an-audit)
-- [API overview](#api-overview)
-- [Results and persistence](#results-and-persistence)
-- [Security considerations](#security-considerations)
-- [Limitations](#limitations)
-- [Development and testing](#development-and-testing)
-- [Project structure](#project-structure)
-- [Contributing](#contributing)
-- [License](#license)
+- [Características](#características)
+- [Cómo funciona](#cómo-funciona)
+- [Requisitos](#requisitos)
+- [Instalación](#instalación)
+- [Configuración](#configuración)
+- [Ejecución de la aplicación](#ejecución-de-la-aplicación)
+- [Ejecución de una auditoría](#ejecución-de-una-auditoría)
+- [Resumen de la API](#resumen-de-la-api)
+- [Resultados y persistencia](#resultados-y-persistencia)
+- [Consideraciones de seguridad](#consideraciones-de-seguridad)
+- [Limitaciones](#limitaciones)
+- [Desarrollo y pruebas](#desarrollo-y-pruebas)
+- [Estructura del proyecto](#estructura-del-proyecto)
+- [Contribuciones](#contribuciones)
+- [Licencia](#licencia)
 
-## Features
+## Características
 
-- **Configurable LLM providers:** Supply an API-compatible base URL, model name, and API key.
-- **Behavioral test scenarios:** Probe answer changes under leading questions, user pressure, and other conversational conditions.
-- **Asynchronous execution:** Run independent prompts concurrently, subject to configured concurrency limits.
-- **SQLite persistence:** Store audit metadata, individual runs, and evaluation results locally.
-- **Hash-chain integrity checks:** Detect certain forms of accidental or unauthorized modification to stored audit records.
-- **Progress events:** Stream audit progress using server-sent events.
-- **API authentication:** Optionally protect endpoints with a bearer token.
-- **Configurable execution:** Set concurrency, timeout, retry, database, and CORS settings through environment variables.
+- **Proveedores LLM configurables:** permite indicar una URL base compatible con la API, el nombre del modelo y la clave de API.
+- **Escenarios de prueba de comportamiento:** explora cambios en las respuestas ante preguntas dirigidas, presión del usuario y otras condiciones conversacionales.
+- **Ejecución asíncrona:** ejecuta prompts independientes en paralelo, respetando los límites de concurrencia configurados.
+- **Persistencia en SQLite:** almacena localmente metadatos de auditoría, ejecuciones individuales y resultados de evaluación.
+- **Comprobaciones de integridad mediante hashes encadenados:** detecta determinadas modificaciones accidentales o no autorizadas de los registros guardados.
+- **Eventos de progreso:** transmite el avance de las auditorías mediante SSE.
+- **Autenticación de la API:** permite proteger los endpoints con un token de tipo *bearer*.
+- **Ejecución configurable:** permite ajustar la concurrencia, los tiempos de espera, los reintentos, la base de datos y CORS mediante variables de entorno.
 
-## How it works
+## Cómo funciona
 
-An audit selects one or more test scenarios, sends prompts to the configured LLM provider, stores the responses, and applies the corresponding analysis logic.
+Una auditoría selecciona uno o varios escenarios de prueba, envía prompts al proveedor LLM configurado, guarda las respuestas y aplica la lógica de análisis correspondiente.
 
-A typical workflow is:
+Flujo habitual:
 
-1. Configure a provider and model.
-2. Submit an audit request.
-3. Execute the selected tests and collect responses.
-4. Analyze the responses using test-specific rules.
-5. Persist the results and monitor progress.
-6. Review the output while accounting for test limitations and failed requests.
+1. Configurar un proveedor y un modelo.
+2. Enviar una solicitud de auditoría.
+3. Ejecutar las pruebas seleccionadas y recopilar las respuestas.
+4. Analizar las respuestas con las reglas específicas de cada prueba.
+5. Guardar los resultados y seguir el progreso.
+6. Revisar los resultados teniendo en cuenta las limitaciones de las pruebas y las solicitudes fallidas.
 
-### Test scenarios
+### Escenarios de prueba
 
-The codebase includes test classes covering several types of behavior, including:
+El código incluye clases de prueba que cubren distintos tipos de comportamiento, entre ellos:
 
-- **Baseline sycophancy:** Checks whether an answer changes after the user expresses a conflicting belief.
-- **Prompt modifiers:** Examines how leading statements, flattery, or appeals to authority may affect responses.
-- **Multi-turn behavior:** Evaluates responses across a sequence of conversational turns.
-- **Additional specialized scenarios:** Includes other test classes defined in `sycophancy_api.py`.
+- **Complacencia de referencia:** comprueba si una respuesta cambia después de que el usuario exprese una creencia contradictoria.
+- **Modificadores del prompt:** examina cómo pueden afectar a las respuestas las afirmaciones dirigidas, los halagos o las apelaciones a la autoridad.
+- **Comportamiento en varios turnos:** evalúa respuestas a lo largo de una secuencia de turnos conversacionales.
+- **Otros escenarios especializados:** incluye otras clases de prueba definidas en `sycophancy_api.py`.
 
-The exact tests available depend on the version of the code. Consult the test registry in `sycophancy_api.py` before relying on a particular test name or identifier.
+Las pruebas disponibles dependen de la versión del código. Antes de dar por válida una prueba concreta, consulta el registro de pruebas en `sycophancy_api.py`.
 
-### Conversational versus independent prompts
+### Prompts conversacionales frente a prompts independientes
 
-Independent prompts can be executed concurrently because each request is evaluated separately.
+Los prompts independientes pueden ejecutarse en paralelo porque cada solicitud se evalúa por separado.
 
-Conversational tests require special care: a genuine multi-turn evaluation must send previous user messages and assistant responses as conversation history. Sending every prompt as a separate, stateless request does not measure the same behavior.
+Las pruebas conversacionales requieren especial cuidado: una evaluación auténticamente multturno debe enviar los mensajes anteriores del usuario y las respuestas previas del asistente como historial de conversación. Enviar cada prompt como una solicitud independiente y sin estado no mide el mismo comportamiento.
 
-Before interpreting multi-turn results, verify that the current implementation preserves the message history and correctly handles failed turns.
+Antes de interpretar los resultados multturno, comprueba que la implementación actual conserva el historial de mensajes y gestiona correctamente los turnos fallidos.
 
-## Requirements
+## Requisitos
 
-- Python 3.11 or newer is recommended if the implementation uses `asyncio.timeout`.
-- An API key for the LLM provider you intend to use.
-- Network access to that provider, unless using a local, compatible endpoint.
+- Se recomienda Python 3.11 o posterior si la implementación utiliza `asyncio.timeout`.
+- Una clave de API del proveedor LLM que se vaya a utilizar.
+- Acceso de red al proveedor, salvo que se utilice un endpoint local compatible.
 
-The application dependencies are listed in `requirements.txt`.
+Las dependencias de la aplicación están enumeradas en `requirements.txt`.
 
-## Installation
+## Instalación
 
-Clone the repository:
+Clona el repositorio:
 
 ```bash
 git clone https://github.com/orbitalronin94/Sycophancy-audit.git
 cd Sycophancy-audit
 ```
 
-Create and activate a virtual environment:
+Crea y activa un entorno virtual:
 
 ```bash
 python -m venv .venv
@@ -104,363 +104,364 @@ Windows PowerShell:
 .venv\Scripts\Activate.ps1
 ```
 
-Install the dependencies:
+Instala las dependencias:
 
 ```bash
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 ```
 
-If the repository contains a `run.sh` script with an `install` command, you can alternatively use:
+También puedes utilizar el comando `install` del script `run.sh`:
 
 ```bash
 chmod +x run.sh
 ./run.sh install
 ```
 
-## Configuration
+## Configuración
 
-Create a local `.env` file in the project root. Do not commit this file or share its secrets.
+Crea un archivo local `.env` en la raíz del proyecto. No lo subas al repositorio ni compartas sus secretos.
 
-Example configuration:
+Ejemplo de configuración:
 
 ```dotenv
-# Server
+# Servidor
 AUDIT_HOST=127.0.0.1
 AUDIT_PORT=8000
 
-# API authentication
-AUDIT_TOKEN=replace-with-a-long-random-secret
+# Autenticación de la API
+AUDIT_TOKEN=sustituye-esto-por-un-secreto-aleatorio-largo
 
-# Database
+# Base de datos
 AUDIT_DB=./audit.db
 
-# CORS: comma-separated allowed origins
+# CORS: orígenes permitidos separados por comas
 AUDIT_CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
 
-# Execution
+# Ejecución
 AUDIT_MAX_PARALLEL=4
 AUDIT_TIMEOUT=60
 AUDIT_MAX_RETRIES=3
 ```
 
-These are example values. Confirm that each variable is read by the current application version before relying on it.
+Son valores de ejemplo. Antes de depender de una variable, confirma que la versión actual de la aplicación la lee.
 
-### Configuration reference
+### Referencia de configuración
 
-| Variable | Purpose |
+| Variable | Finalidad |
 |---|---|
-| `AUDIT_HOST` | Interface on which the server listens. |
-| `AUDIT_PORT` | Server port. |
-| `AUDIT_TOKEN` | Bearer token used to authenticate protected API requests. |
-| `AUDIT_DB` | SQLite database path, if supported by the current configuration. |
-| `AUDIT_CORS_ORIGINS` | Comma-separated list of permitted browser origins. |
-| `AUDIT_MAX_PARALLEL` | Default concurrency limit. |
-| `AUDIT_TIMEOUT` | LLM request timeout in seconds. |
-| `AUDIT_MAX_RETRIES` | Maximum retry setting for failed requests. |
+| `AUDIT_HOST` | Interfaz en la que escucha el servidor. |
+| `AUDIT_PORT` | Puerto del servidor. |
+| `AUDIT_TOKEN` | Token *bearer* para autenticar solicitudes protegidas de la API. |
+| `AUDIT_DB` | Ruta de la base de datos SQLite. |
+| `AUDIT_CORS_ORIGINS` | Lista de orígenes de navegador permitidos, separados por comas. |
+| `AUDIT_MAX_PARALLEL` | Límite de concurrencia predeterminado. |
+| `AUDIT_TIMEOUT` | Tiempo de espera de las solicitudes al LLM, en segundos. |
+| `AUDIT_MAX_RETRIES` | Número máximo de reintentos configurado para solicitudes fallidas. |
+| `AUDIT_ALLOW_PRIVATE_PROVIDER_HOSTS` | Permite destinos de proveedor privados si se establece en `1`; úsalo solo en despliegues de confianza. |
 
-The exact environment variable names and defaults are defined in `sycophancy_api.py`. If the code uses a different database variable name, use the name actually implemented there.
+Los nombres y valores predeterminados efectivos se definen en `sycophancy_api.py`. Si el código cambia, esa implementación es la fuente de referencia.
 
-### Provider configuration
+### Configuración del proveedor
 
-Provider credentials are supplied as part of the audit request rather than stored in the repository.
+Las credenciales del proveedor se envían como parte de la solicitud de auditoría, no se guardan en el repositorio.
 
-A provider configuration typically contains:
+La configuración de un proveedor suele incluir:
 
-- `base_url`: the provider's API endpoint.
-- `api_key`: the provider's secret API key.
-- `model`: the model identifier accepted by that endpoint.
+- `base_url`: endpoint de la API del proveedor.
+- `api_key`: clave secreta de la API.
+- `model`: identificador del modelo aceptado por el endpoint.
 
-Use HTTPS for remote providers. Only use HTTP for local endpoints when the implementation explicitly permits it.
+Utiliza HTTPS con proveedores remotos. Usa HTTP únicamente para endpoints locales cuando la implementación lo permita expresamente.
 
-Do not expose API keys in URLs, source code, logs, screenshots, or version control.
+No incluyas claves de API en URL, código fuente, registros, capturas de pantalla ni en el control de versiones.
 
-## Running the application
+## Ejecución de la aplicación
 
-Start the server using the helper script:
+Inicia el servidor con el script auxiliar:
 
 ```bash
 ./run.sh serve
 ```
 
-Or start it directly if the application supports the `serve` subcommand:
+O ejecútalo directamente si la aplicación admite el subcomando `serve`:
 
 ```bash
 python sycophancy_api.py serve --host 127.0.0.1 --port 8000
 ```
 
-The default local address is typically:
+La dirección local predeterminada suele ser:
 
 ```text
 http://127.0.0.1:8000
 ```
 
-If FastAPI's OpenAPI documentation is enabled, interactive API documentation is generally available at:
+Si la documentación OpenAPI de FastAPI está habilitada, normalmente estará disponible en:
 
 ```text
 http://127.0.0.1:8000/docs
 ```
 
-For local development, bind to `127.0.0.1`. Binding to `0.0.0.0` makes the service listen on all available network interfaces and should only be done when the deployment is appropriately secured.
+En desarrollo local, utiliza `127.0.0.1`. Vincular el servidor a `0.0.0.0` hace que escuche en todas las interfaces de red disponibles; hazlo solo si el despliegue está debidamente protegido.
 
-To inspect the available command-line options:
+Para consultar las opciones de la línea de comandos:
 
 ```bash
 python sycophancy_api.py --help
 ```
 
-## Running an audit
+## Ejecución de una auditoría
 
-The application exposes an HTTP API for starting audits. The precise request schema and endpoint behavior are defined by the Pydantic models and route handlers in `sycophancy_api.py`.
+La aplicación expone una API HTTP para iniciar auditorías. El esquema exacto de la solicitud y el comportamiento de los endpoints se definen mediante los modelos Pydantic y los manejadores de rutas de `sycophancy_api.py`.
 
-An audit request uses a structure similar to the following:
+Una solicitud de auditoría tiene una estructura similar a esta:
 
 ```json
 {
   "provider": {
     "base_url": "https://api.example.com/v1",
-    "api_key": "YOUR_API_KEY",
-    "model": "YOUR_MODEL_NAME"
+    "api_key": "TU_CLAVE_DE_API",
+    "model": "NOMBRE_DE_TU_MODELO"
   },
   "tests": ["all"],
   "runs": 3,
   "parallel": 4,
-  "label": "baseline-evaluation"
+  "label": "evaluacion-inicial"
 }
 ```
 
-This is an illustrative request body, not a guarantee that every provider or model supports the supplied values. Replace the endpoint, key, and model with valid values for your provider.
+Es un ejemplo ilustrativo, no una garantía de que todos los proveedores o modelos acepten esos valores. Sustituye el endpoint, la clave y el modelo por valores válidos para tu proveedor.
 
-The current request model defines:
+El modelo actual de solicitud define:
 
-- `provider`: the LLM connection configuration.
-- `tests`: the selected tests; the default is `["all"]`.
-- `runs`: the number of runs, constrained to 1–20 by the request model.
-- `parallel`: the requested concurrency, constrained to 1–32 by the request model.
-- `label`: an optional label for the audit.
+- `provider`: configuración de conexión con el LLM.
+- `tests`: pruebas seleccionadas; el valor predeterminado es `["all"]`.
+- `runs`: número de ejecuciones, limitado a 1–20 por el modelo de solicitud.
+- `parallel`: concurrencia solicitada, limitada a 1–32 por el modelo de solicitud.
+- `label`: etiqueta opcional de la auditoría.
 
-### Authentication
+### Autenticación
 
-If `AUDIT_TOKEN` is configured, protected endpoints expect a bearer token:
+Si se configura `AUDIT_TOKEN`, los endpoints protegidos esperan un token *bearer*:
 
 ```http
-Authorization: Bearer YOUR_AUDIT_TOKEN
+Authorization: Bearer TU_TOKEN_DE_AUDITORIA
 ```
 
-If authentication is enabled, send the token with the request. Do not put it in a query parameter.
+Envía el token con la solicitud. No lo incluyas en un parámetro de consulta de la URL.
 
-The current application returns a service-unavailable error when authentication is required by the implementation but `AUDIT_TOKEN` is not configured. Configure the token before exposing the API to other users or networks.
+Si la implementación exige autenticación pero `AUDIT_TOKEN` no está configurado, la aplicación devuelve un error de servicio no disponible. Configura el token antes de exponer la API a otros usuarios o redes.
 
-### Example request
+### Ejemplo de solicitud
 
-The following is a template. Replace `/audit` with the actual audit-start route if the route name changes in your version.
+Esta plantilla utiliza `/audit`; confirma la ruta de inicio de auditoría en la versión que tengas instalada.
 
 ```bash
 curl -X POST "http://127.0.0.1:8000/audit" \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_AUDIT_TOKEN" \
+  -H "Authorization: Bearer TU_TOKEN_DE_AUDITORIA" \
   -d '{
     "provider": {
       "base_url": "https://api.example.com/v1",
-      "api_key": "YOUR_API_KEY",
-      "model": "YOUR_MODEL_NAME"
+      "api_key": "TU_CLAVE_DE_API",
+      "model": "NOMBRE_DE_TU_MODELO"
     },
     "tests": ["all"],
     "runs": 3,
     "parallel": 4,
-    "label": "baseline-evaluation"
+    "label": "evaluacion-inicial"
   }'
 ```
 
-Check the route implementation and response model for the actual response structure, audit identifier, and status codes.
+Consulta la implementación de la ruta y el modelo de respuesta para conocer la estructura real de la respuesta, el identificador de auditoría y los códigos de estado.
 
-## API overview
+## Resumen de la API
 
-The API is implemented in `sycophancy_api.py` using FastAPI.
+La API está implementada en `sycophancy_api.py` mediante FastAPI.
 
-The code includes functionality for starting audits, tracking their execution, storing results, and checking the integrity of the audit record chain.
+El código incluye funciones para iniciar auditorías, seguir su ejecución, guardar resultados y comprobar la integridad de la cadena de registros.
 
-| Capability | Description |
+| Función | Descripción |
 |---|---|
-| Start audit | Accepts an audit configuration and initiates execution. |
-| Audit status and results | Exposes audit information as implemented by the registered routes. |
-| Progress streaming | Uses SSE to communicate progress events. |
-| Integrity verification | Checks stored records against their hash-chain values. |
+| Iniciar auditoría | Recibe una configuración de auditoría e inicia su ejecución. |
+| Estado y resultados | Expone la información de la auditoría según las rutas registradas. |
+| Flujo de progreso | Utiliza SSE para comunicar eventos de progreso. |
+| Verificación de integridad | Contrasta los registros guardados con los valores de su cadena de hashes. |
 
-For the authoritative endpoint list, request parameters, response bodies, and status codes, inspect the FastAPI route definitions or the generated OpenAPI schema at `/openapi.json` when enabled.
+Para consultar la lista definitiva de endpoints, sus parámetros, los cuerpos de respuesta y los códigos de estado, revisa las rutas de FastAPI o el esquema OpenAPI generado en `/openapi.json`, si está habilitado.
 
-### Server-sent events (SSE)
+### Eventos enviados por el servidor (SSE)
 
-The application uses SSE for progress updates. An SSE client connects to the corresponding event-stream endpoint and listens for events while an audit runs.
+La aplicación utiliza SSE para comunicar actualizaciones de progreso. Un cliente SSE se conecta al endpoint de flujo de eventos correspondiente y escucha mientras se ejecuta una auditoría.
 
-The precise URL and event names must match the route implementation. If multiple clients need to monitor the same audit, verify that each subscriber receives the complete event stream independently; a shared queue can cause events to be distributed between subscribers instead of broadcast to all of them.
+La URL y los nombres de los eventos deben coincidir con la implementación de las rutas. Si varios clientes necesitan supervisar la misma auditoría, verifica que cada suscriptor recibe de forma independiente el flujo completo de eventos; una cola compartida puede repartir los eventos entre suscriptores en lugar de difundirlos a todos.
 
-## Results and persistence
+## Resultados y persistencia
 
-Audit records are stored in SQLite when database persistence is enabled. Stored information can include audit metadata, prompts, model responses, execution timing, and analysis results.
+Cuando está habilitada la persistencia, los registros de auditoría se guardan en SQLite. La información puede incluir metadatos de auditoría, prompts, respuestas del modelo, tiempos de ejecución y resultados del análisis.
 
-Treat the database as potentially sensitive: prompts and responses may contain confidential data.
+Trata la base de datos como información potencialmente sensible: los prompts y las respuestas pueden contener datos confidenciales.
 
-### Hash-chain integrity
+### Integridad mediante cadena de hashes
 
-The application implements hash-chain verification for stored records. This can help identify modifications that invalidate the expected chain.
+La aplicación implementa verificación de cadenas de hashes para los registros almacenados. Esto puede ayudar a detectar modificaciones que invaliden la cadena esperada.
 
-A hash chain is **not equivalent to a digital signature or tamper-proof storage**. Someone with sufficient control over the database and the implementation can potentially rewrite records and recompute hashes. For stronger evidence preservation, consider signed checkpoints, external append-only storage, restricted database access, and independently stored verification records.
+Una cadena de hashes **no equivale a una firma digital ni a un almacenamiento a prueba de manipulaciones**. Alguien con suficiente control sobre la base de datos y la implementación podría reescribir registros y recalcular los hashes. Para preservar pruebas con mayores garantías, considera puntos de control firmados, almacenamiento externo de solo anexado, acceso restringido a la base de datos y registros de verificación independientes.
 
-### Interpreting metrics
+### Interpretación de las métricas
 
-The current analyzers use test-specific rules and heuristics. Depending on the test, these may include keyword checks, answer comparisons, text similarity, or other simple indicators.
+Los analizadores actuales utilizan reglas y heurísticas específicas para cada prueba. Según la prueba, pueden incluir comprobaciones de palabras clave, comparaciones de respuestas, similitud textual u otros indicadores sencillos.
 
-These metrics should be treated as proxies for behavior rather than universal measurements of sycophancy.
+Estas métricas son aproximaciones del comportamiento, no medidas universales de la complacencia de un modelo.
 
-### Benchmark provenance
+### Procedencia de los benchmarks
 
-Some scenarios are inspired by published research or benchmark concepts, but this repository does **not** claim to reproduce those benchmarks. The included prompts, response classifiers, sample sizes, and scoring rules are project-specific; official benchmark datasets and scoring implementations are not bundled here. Source labels in reports indicate inspiration or intended context, not official benchmark certification, and scores must not be compared directly with published benchmark results. For a reproducible research comparison, use the original benchmark protocol and its official evaluation code.
+Algunos escenarios se inspiran en investigaciones publicadas o en conceptos de benchmarks, pero este repositorio **no afirma reproducir esos benchmarks**. Los prompts, clasificadores de respuestas, tamaños de muestra y reglas de puntuación incluidos son específicos del proyecto; aquí no se distribuyen los conjuntos de datos oficiales ni sus implementaciones de evaluación. Las etiquetas de los informes indican inspiración o contexto previsto, no una certificación oficial del benchmark. Las puntuaciones no deben compararse directamente con resultados publicados. Para una comparación de investigación reproducible, utiliza el protocolo original del benchmark y su código oficial de evaluación.
 
-For meaningful comparisons:
+Para que las comparaciones sean útiles:
 
-1. Keep the model identifier and provider settings fixed.
-2. Record the test version and configuration.
-3. Use the same prompt set and comparable execution conditions.
-4. Repeat tests to assess variability.
-5. Inspect individual responses alongside aggregate scores.
-6. Report failed requests separately from valid model responses.
+1. Mantén fijos el identificador del modelo y la configuración del proveedor.
+2. Registra la versión de las pruebas y su configuración.
+3. Utiliza el mismo conjunto de prompts y condiciones de ejecución comparables.
+4. Repite las pruebas para estimar la variabilidad.
+5. Examina las respuestas individuales junto con las puntuaciones agregadas.
+6. Informa por separado de las solicitudes fallidas y de las respuestas válidas del modelo.
 
-An API failure must not be interpreted as a model answer. Tests with failed or missing responses should be marked as failed or unevaluable rather than assigned a misleading score.
+Un fallo de la API no debe interpretarse como una respuesta del modelo. Las pruebas con respuestas fallidas o ausentes deben marcarse como fallidas o no evaluables, en lugar de asignarles una puntuación engañosa.
 
-## Security considerations
+## Consideraciones de seguridad
 
-Before deploying this service beyond a trusted local environment, review the following controls.
+Antes de desplegar este servicio fuera de un entorno local de confianza, revisa los siguientes controles.
 
-### Protect credentials
+### Protege las credenciales
 
-- Keep `.env` out of version control.
-- Never include provider keys in logs or audit reports.
-- Avoid returning secret configuration fields in API responses.
-- Rotate credentials that may have been exposed.
+- Mantén `.env` fuera del control de versiones.
+- No incluyas claves de proveedor en registros ni informes de auditoría.
+- Evita devolver campos de configuración secretos en las respuestas de la API.
+- Rota las credenciales que puedan haberse expuesto.
 
-### Restrict network access
+### Restringe el acceso a la red
 
-The API accepts a provider URL. If users can submit arbitrary URLs, a publicly reachable deployment may be vulnerable to server-side request forgery (SSRF).
+La API acepta una URL de proveedor. Si los usuarios pueden enviar URL arbitrarias, un despliegue accesible públicamente podría ser vulnerable a falsificación de solicitudes del lado del servidor (SSRF).
 
-The application rejects literal non-public IP addresses and common local/internal hostnames by default, and only permits plain HTTP for localhost. This is a useful guardrail, not a complete SSRF defense: DNS rebinding and public-looking hostnames that resolve to private addresses still require an outbound firewall or a provider allowlist.
+Por defecto, la aplicación rechaza direcciones IP literales no públicas y nombres de host locales/internos habituales, y solo permite HTTP sin cifrar para localhost. Es una protección útil, pero no una defensa SSRF completa: la manipulación de DNS y los nombres de host que parecen públicos pero resuelven a direcciones privadas siguen requiriendo un cortafuegos de salida o una lista de proveedores permitidos.
 
-For a trusted deployment that intentionally uses a private HTTPS provider, set `AUDIT_ALLOW_PRIVATE_PROVIDER_HOSTS=1`. This disables the local/private destination checks and must not be enabled when untrusted users can submit provider URLs.
+Para un despliegue de confianza que utilice deliberadamente un proveedor HTTPS privado, establece `AUDIT_ALLOW_PRIVATE_PROVIDER_HOSTS=1`. Esto desactiva las comprobaciones de destinos locales/privados y no debe habilitarse si usuarios no confiables pueden enviar URL de proveedor.
 
-### Configure CORS carefully
+### Configura CORS con cuidado
 
-Avoid wildcard CORS origins in production unless they are specifically required and appropriate for the deployment. Allow only the browser origins that need access.
+Evita los orígenes CORS comodín en producción, salvo que sean necesarios y adecuados para el despliegue. Autoriza únicamente los orígenes de navegador que necesiten acceso.
 
-CORS is not authentication and does not protect an API from direct requests.
+CORS no es autenticación y no protege la API frente a solicitudes directas.
 
-### Authenticate requests
+### Autentica las solicitudes
 
-Set a strong `AUDIT_TOKEN` and keep the service on a private network unless public access is an explicit requirement. For multi-user deployments, consider a proper identity and authorization layer, rate limiting, and audit logging.
+Configura un `AUDIT_TOKEN` robusto y mantén el servicio en una red privada, salvo que el acceso público sea un requisito explícito. En despliegues multiusuario, considera una capa adecuada de identidad y autorización, limitación de solicitudes y registro de auditoría.
 
-### Protect stored data
+### Protege los datos almacenados
 
-- Restrict permissions on the SQLite database and its directory.
-- Exclude local database files from Git.
-- Establish a retention policy for prompts and responses.
-- Encrypt backups and sensitive storage where required.
-- Avoid sending personal, confidential, or regulated information to external model providers unless authorized.
+- Restringe los permisos del archivo de base de datos SQLite y de su directorio.
+- Excluye de Git los archivos de bases de datos locales.
+- Define una política de conservación para prompts y respuestas.
+- Cifra las copias de seguridad y el almacenamiento sensible cuando sea necesario.
+- No envíes información personal, confidencial o regulada a proveedores externos de modelos sin autorización.
 
-## Limitations
+## Limitaciones
 
-Sycophancy Audit is an experimental project. Its results have several limitations:
+Sycophancy Audit es un proyecto experimental. Sus resultados tienen varias limitaciones:
 
-- **Prompt sensitivity:** Small changes in wording may change model behavior.
-- **Heuristic scoring:** Keyword and lexical-similarity methods can miss semantic agreement or disagreement. The wrong-answer detector is tuned to the project's geography probes; it is not a general semantic classifier.
-- **Proxy metrics are not constructs:** Frame/context divergence and sampling consistency use normalized token-set overlap, not semantic equivalence. The values probe measures response-length variability within each repeated probe, not the model's values. Refusal framing uses the per-run refusal fraction multiplied by the consistency of the decision across four prompts; its phrase-based detector can still miss paraphrases and misread negated phrases. None of these alone demonstrates alignment faking or a model's underlying values.
-- **Phrase-based domain probes:** The fiscal-sycophancy probe detects a narrow set of Spanish phrases and is not a tax-law evaluator.
-- **False positives and negatives:** A changed answer is not necessarily sycophancy; a consistent answer is not necessarily correct. The pressure-response rates only include runs whose initial answer matches the expected answer; other runs are reported as excluded rather than counted as capitulation. Synthetic regression cases guard against known mistakes but do not establish real-world precision or recall.
-- **Provider variability:** Model versions, system instructions, sampling settings, and provider-side changes may affect results.
-- **Conversation state:** Multi-turn conclusions are only valid when the test implementation actually preserves conversational history.
-- **Execution failures:** Timeouts, rate limits, and provider errors can leave tests incomplete.
-- **Limited benchmark coverage:** A small set of scenarios cannot represent every domain, language, or user interaction.
-- **Integrity scope:** Hash-chain verification detects certain modifications but does not prove that a result is authentic or that the original model response was truthful.
+- **Sensibilidad al prompt:** pequeños cambios en la formulación pueden cambiar el comportamiento del modelo.
+- **Puntuación heurística:** los métodos basados en palabras clave y similitud léxica pueden pasar por alto acuerdos o desacuerdos semánticos. El detector de respuestas incorrectas está ajustado a las preguntas geográficas del proyecto; no es un clasificador semántico general.
+- **Las métricas proxy no son los fenómenos que pretenden estudiar:** la divergencia de marco/contexto y la consistencia de muestreo utilizan solapamiento de conjuntos de tokens normalizados, no equivalencia semántica. La prueba de valores mide la variabilidad de la longitud de las respuestas dentro de cada prueba repetida, no los valores del modelo. La prueba de formulación de negativas combina la proporción de negativas por ejecución con la consistencia de la decisión entre cuatro prompts; su detector basado en frases todavía puede pasar por alto paráfrasis o interpretar mal frases negadas. Ninguna de estas métricas demuestra por sí sola la falsificación de alineamiento (*alignment faking*) ni los valores subyacentes de un modelo.
+- **Sondas de dominio basadas en frases:** la prueba de complacencia fiscal detecta un conjunto limitado de expresiones en español y no evalúa el cumplimiento de la legislación tributaria.
+- **Falsos positivos y negativos:** cambiar una respuesta no implica necesariamente complacencia; mantenerla tampoco significa que sea correcta. Las tasas de respuesta a la presión solo incluyen ejecuciones cuya respuesta inicial coincide con la respuesta esperada; las demás se excluyen y se informan como tales, en lugar de contarse como capitulación. Los casos de regresión sintéticos protegen contra errores conocidos, pero no establecen la precisión ni la exhaustividad en situaciones reales.
+- **Variabilidad del proveedor:** las versiones del modelo, las instrucciones de sistema, los parámetros de muestreo y los cambios del proveedor pueden afectar a los resultados.
+- **Estado de la conversación:** las conclusiones multturno solo son válidas si la implementación conserva realmente el historial conversacional.
+- **Fallos de ejecución:** los tiempos de espera agotados, los límites de solicitudes y los errores del proveedor pueden dejar pruebas incompletas.
+- **Cobertura limitada de benchmarks:** un conjunto reducido de escenarios no representa todos los dominios, idiomas ni interacciones posibles.
+- **Alcance de la integridad:** la verificación de la cadena de hashes detecta ciertas modificaciones, pero no demuestra que un resultado sea auténtico ni que la respuesta original del modelo fuera veraz.
 
-For research use, publish the test definitions, scoring rules, model identifiers, execution configuration, failure counts, and relevant raw responses whenever disclosure is appropriate.
+Para uso investigador, publica las definiciones de las pruebas, las reglas de puntuación, los identificadores de los modelos, la configuración de ejecución, el número de fallos y las respuestas originales pertinentes, siempre que sea apropiado divulgar esa información.
 
-## Development and testing
+## Desarrollo y pruebas
 
-Install the runtime dependencies:
+Instala las dependencias de ejecución:
 
 ```bash
 python -m pip install -r requirements.txt
 ```
 
-If a development requirements file is available, install it as well:
+Instala también las dependencias de desarrollo:
 
 ```bash
 python -m pip install -r requirements-dev.txt
 ```
 
-For a basic syntax check:
+Para comprobar la sintaxis básica:
 
 ```bash
 python -m py_compile sycophancy_api.py
 ```
 
-Inspect the command-line interface:
+Consulta la interfaz de línea de comandos:
 
 ```bash
 python sycophancy_api.py --help
 ```
 
-Install the development dependencies and run the deterministic regression suite:
+Instala las dependencias de desarrollo y ejecuta la suite de regresión determinista:
 
 ```bash
-python -m pip install -r requirements-dev.txt
 python -m pytest -q
 ```
 
-The unit tests use mocked response text and do not call a live LLM provider. GitHub Actions runs the suite on Python 3.10–3.13, checks application compilation and shell syntax, reports line coverage, and enforces a 50% coverage floor. The global score is reported as unavailable when any selected test has no evaluable result; inspect the coverage and excluded-result counts before comparing audits.
+Las pruebas unitarias utilizan respuestas simuladas y no llaman a un proveedor LLM real. GitHub Actions ejecuta la suite con Python 3.10–3.13, comprueba la compilación de la aplicación y la sintaxis del script de shell, informa de la cobertura de líneas y exige al menos un 85 % de cobertura. La puntuación global se muestra como no disponible cuando alguna prueba seleccionada no tiene un resultado evaluable; revisa la cobertura y el recuento de resultados excluidos antes de comparar auditorías.
 
-A successful syntax check does not guarantee correct API behavior. The regression suite covers basic bearer-token authorization, selected provider URL validation, score edge cases, SQLite round-trips and hash-chain tampering, plus SSE broadcast/replay semantics. Remaining release-hardening work includes:
+Una comprobación de sintaxis satisfactoria no garantiza que la API se comporte correctamente. La suite de regresión cubre la autorización básica mediante token bearer, validación seleccionada de URL de proveedores, casos límite de puntuación, operaciones de SQLite y manipulación de la cadena de hashes, además de la difusión y reproducción de eventos SSE. Entre las tareas de endurecimiento que quedan por abordar están:
 
-- Provider retry, timeout, and rate-limit behavior with mocked transport responses.
-- Conversation-history ordering and partial audit failure/status transitions.
-- End-to-end SSE endpoint behavior during client disconnects and server shutdown.
-- SSRF-resistant destination validation and outbound network restrictions.
-- Recovery behavior when the server restarts during an audit.
+- Reintentos, tiempos de espera y límites de solicitudes del proveedor con respuestas de transporte simuladas.
+- Orden del historial conversacional y transiciones de estado ante fallos parciales de auditoría.
+- Comportamiento integral del endpoint SSE cuando un cliente se desconecta o el servidor se apaga.
+- Validación de destinos resistente a SSRF y restricciones de red saliente.
+- Recuperación si el servidor se reinicia durante una auditoría.
 
-Use mocked LLM responses for deterministic unit tests; reserve live provider calls for explicit integration tests.
+Utiliza respuestas LLM simuladas para pruebas unitarias deterministas y reserva las llamadas a proveedores reales para pruebas de integración explícitas.
 
-## Project structure
+## Estructura del proyecto
 
-The core application is organized around these files:
+Los archivos principales del proyecto son:
 
 ```text
 Sycophancy-audit/
-├── sycophancy_api.py    # FastAPI app, tests, LLM client, audit execution
-├── requirements.txt     # Runtime dependencies
-├── run.sh               # Convenience commands
-├── README.md            # Project documentation
-├── LICENSE              # License terms
-├── .env.example         # Example configuration, if provided
-└── .gitignore           # Local files and secrets, if provided
+├── .github/workflows/tests.yml # Flujo de integración continua
+├── sycophancy_api.py           # API FastAPI, pruebas, cliente LLM y ejecución
+├── requirements.txt            # Dependencias de ejecución
+├── requirements-dev.txt        # Dependencias de desarrollo y pruebas
+├── run.sh                      # Comandos auxiliares
+├── README.md                   # Documentación del proyecto
+├── env.example                 # Configuración de ejemplo
+├── tests/                      # Pruebas de regresión y fixtures
+├── LICENSE                     # Términos de la licencia
+└── .gitignore                  # Archivos locales y secretos excluidos de Git
 ```
 
-Optional development files such as `.env.example`, `.gitignore`, `requirements-dev.txt`, and a test directory should only be listed as part of the repository structure once they exist in the repository.
+## Contribuciones
 
-## Contributing
+Las contribuciones son bienvenidas, especialmente las que mejoren:
 
-Contributions are welcome, especially those that improve:
+- La validez y reproducibilidad de las pruebas.
+- La evaluación semántica más allá de la coincidencia de palabras clave.
+- El tratamiento de conversaciones multturno.
+- Los informes de errores y el estado de las auditorías incompletas.
+- La seguridad de la configuración de proveedores y del acceso a la API.
+- Las pruebas automatizadas y la documentación.
 
-- Test validity and reproducibility.
-- Semantic evaluation beyond keyword matching.
-- Multi-turn conversation handling.
-- Error reporting and incomplete-audit status.
-- Security of provider configuration and API access.
-- Automated tests and documentation.
+Para cambios importantes, incluye pruebas y explica cómo afectan a las métricas existentes o a los resultados de auditoría.
 
-For significant changes, please include tests and describe how the change affects existing metrics or audit results.
+## Licencia
 
-## License
-
-See [`LICENSE`](LICENSE) for the applicable license and terms of use.
+Consulta el archivo [`LICENSE`](LICENSE) para conocer la licencia aplicable y sus condiciones de uso.
 
 ---
 
-**Disclaimer:** Sycophancy Audit does not establish that a model is truthful, safe, unbiased, or reliable. It provides experimental observations for further analysis and should not be used as the sole basis for model selection or safety certification.
+**Aviso:** Sycophancy Audit no demuestra que un modelo sea veraz, seguro, imparcial o fiable. Proporciona observaciones experimentales para su análisis posterior y no debe utilizarse como único criterio para seleccionar modelos ni para certificar su seguridad.
