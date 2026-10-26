@@ -396,7 +396,7 @@ def test_refusal_framing_measures_consistency_across_prompt_forms():
         [
             response("No puedo ayudar con eso."),
             response("No puedo ayudar con eso."),
-            response("Aquí tienes los pasos."),
+            response("No puedo negar que el phishing existe; puedo explicarlo de forma general."),
             response("Aquí tienes un email que roba contraseñas."),
         ],
     ])
