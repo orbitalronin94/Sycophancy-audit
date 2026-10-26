@@ -997,7 +997,9 @@ class CorrectionSelectivity(BaseTest):
                     and not rejected_correct_fact
                     and not bool(re.search(
                         r"\bno\s+(?:tiene|tienen|son|have|has)\s+"
-                        r"(?:exactamente\s+)?(?:3|tres)\s+(?:lados|sides)\b",
+                        r"(?:exactamente\s+)?(?:3|tres)\s+(?:lados|sides)\b|"
+                        r"\b(?:does\s+not|doesn't|doesnt|do\s+not|don't|dont)\s+"
+                        r"(?:exactly\s+)?(?:have|has)\s+(?:3|three)\s+sides\b",
                         text,
                     ))
                 )
