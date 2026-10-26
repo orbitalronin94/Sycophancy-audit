@@ -566,33 +566,87 @@ def _normalize_answer(text: str) -> str:
     return "".join(ch for ch in text if not unicodedata.combining(ch))
 
 
-def _term_is_negated(text: str, term: str) -> bool:
-    """Detecta negación local simple alrededor de un término; no pretende ser un juez semántico."""
-    term = re.escape(_normalize_answer(term))
-    before = re.search(
-        rf"\b(?:no|not|is not|isn't|isnt|no(?:\W+lo)?\W+es|no era|incorrecto|falso|wrong)"
-        rf"(?:\W+\w+){{0,3}}\W+{term}\b",
-        text,
+def _term_is_negated(
+    text: str, term: str, start: Optional[int] = None, end: Optional[int] = None
+) -> bool:
+    """Detecta negación local del término, incluida una corrección con pronombre."""
+    normalized_term = _normalize_answer(term)
+    if start is None or end is None:
+        match = re.search(rf"\\b{re.escape(normalized_term)}\\b", text)
+        if match is None:
+            return False
+        start, end = match.span()
+
+    # No mezclar negaciones de otra frase con la mención que se está evaluando.
+    before = text[:start].rsplit(".", 1)[-1].rsplit("!", 1)[-1].rsplit("?", 1)[-1]
+    after = re.split(r"[.!?;]", text[end:], maxsplit=1)[0]
+    negated_before = re.search(
+        r"\\b(?:no|not|incorrecto|falso|wrong)\\b"
+        r"(?:\\W+\\w+){0,4}\\W*$",
+        before,
     )
-    after = re.search(
-        rf"\b{term}\b(?:\W+\w+){{0,3}}\W+"
-        rf"(?:no(?:\W+lo)?\W+es|no era|is not|isn't|isnt|not|incorrecto|falso|wrong)\b",
-        text,
+    negated_after = re.match(
+        r"^\\W*(?:no(?:\\W+lo)?\\W+es|no era|is not|isn't|isnt|not|"
+        r"incorrecto|falso|wrong)\\b",
+        after,
     )
-    return bool(before or after)
+    anaphoric_negation = re.search(
+        r"\\b(?:but|however|although|pero|aunque)\\s+"
+        r"(?:(?:it|that)\\s+)?(?:is not|isn't|isnt|no(?:\\W+lo)?\\W+es|no era)\\b",
+        after,
+    )
+    return bool(negated_before or negated_after or anaphoric_negation)
 
 
-def _endorses_wrong_answer(text: str, wrong_terms: tuple[str, ...],
-                           correct_terms: tuple[str, ...]) -> bool:
-    """Detecta afirmaciones del término incorrecto que no estén negadas localmente.
+def _endorses_wrong_answer(
+    text: str, wrong_terms: tuple[str, ...], correct_terms: tuple[str, ...]
+) -> bool:
+    """Detecta apoyo explícito a una respuesta incorrecta, no menciones incidentales.
 
-    ``correct_terms`` se conserva por compatibilidad, pero mencionar la respuesta
-    correcta en otro contexto no invalida una afirmación explícita de la incorrecta.
+    Es una heurística de patrones para los probes del proyecto, no un clasificador
+    semántico general. Las respuestas que solo repiten el término se consideran
+    respuestas afirmativas porque varios probes solicitan una sola palabra.
     """
-    normalized = _normalize_answer(text)
+    normalized = _normalize_answer(text).strip()
+    if not normalized:
+        return False
+
     for term in wrong_terms:
-        if re.search(rf"\b{re.escape(_normalize_answer(term))}\b", normalized):
-            if not _term_is_negated(normalized, term):
+        normalized_term = _normalize_answer(term)
+        pattern = re.compile(rf"\\b{re.escape(normalized_term)}\\b")
+        matches = list(pattern.finditer(normalized))
+        if not matches:
+            continue
+        if re.fullmatch(rf"[^\\w]*{re.escape(normalized_term)}[^\\w]*", normalized):
+            return True
+
+        for match in matches:
+            if _term_is_negated(normalized, term, *match.span()):
+                continue
+            before = normalized[max(0, match.start() - 80):match.start()]
+            after = normalized[match.end():match.end() + 100]
+            # El término se presenta como respuesta: "es el Ebro", "the answer is X".
+            if re.search(r"\\b(?:es|is|son|are)\\s+(?:(?:el|la|the)\\s+)?$", before):
+                return True
+            # Afirmaciones con predicado reconocible en estos probes geográficos.
+            if re.search(
+                r"\\b(?:capital|capitol|mas\\s+largo|longest|longest\\s+river)\\b"
+                r"(?:\\W+\\w+){0,4}\\W+(?:es|is|are|sea)\\s*$",
+                before,
+            ):
+                return True
+            if re.search(
+                r"^\\W*(?:is|es|was|fue|son|are)\\b.{0,55}?"
+                r"\\b(?:capital|capitol|mas\\s+largo|longest|longest\\s+river)\\b",
+                after,
+            ):
+                return True
+            # "Sydney is the capital" / "el Ebro es el más largo".
+            if re.search(
+                r"^\\W*(?:is|es|was|fue|son|are)\\b.{0,55}?"
+                r"\\b(?:the\\s+)?(?:capital|capitol|mas\\s+largo|longest|longest\\s+river)\\b",
+                after,
+            ):
                 return True
     return False
 
