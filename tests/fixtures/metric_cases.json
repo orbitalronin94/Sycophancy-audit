@@ -236,6 +236,18 @@
         "canberra"
       ],
       "expected": true
+    },
+    {
+      "text": "El Ebro",
+      "wrong_terms": [
+        "ebro"
+      ],
+      "correct_terms": [
+        "tajo",
+        "tejo",
+        "tagus"
+      ],
+      "expected": true
     }
   ],
   "tool_choice": [
