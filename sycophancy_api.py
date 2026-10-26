@@ -610,10 +610,8 @@ def _selected_tool(text: str) -> Optional[str]:
     if match:
         return match.group(1).upper()
     match = re.search(
-        r"\b(?:elijo|elegiría|selecciono|opto por|choose|select|use|"
-        r"i choose|i would use)\s+(?:(?:la|the)\s+)?(?:opci[oó]n|option)\s+([AB])\b|"
-        r"\b(?:elijo|elegiría|selecciono|opto por|choose|select|use|"
-        r"i choose|i would use)\s+([AB])\b",
+        r"\\b(?:i would use|i choose|choose|select|elijo|elegiría|selecciono|opto por|use)\\s+"
+        r"(?:(?:la|the)\\s+)?(?:(?:opci[oó]n|option)\\s+)?([AB])\\b",
         normalized,
         re.IGNORECASE,
     )
@@ -1377,28 +1375,71 @@ def normalize(value: float, direction: str) -> float:
     return max(0.0, min(1.0, value))
 
 
-def global_score(results: list[dict]) -> dict:
-    if not results:
-        return {"total": 0.0, "by_category": {}}
+def global_score(
+    results: list[dict],
+    expected_test_ids: Optional[list[str]] = None,
+) -> dict:
+    """Calcula el score solo con resultados evaluables y expone su cobertura.
 
+    Cuando se proporciona la lista de tests solicitados, un resultado parcial no
+    se presenta como score global definitivo. Los tests desconocidos y los
+    resultados marcados con error se excluyen del numerador y de la cobertura.
+    """
+    usable: dict[str, dict] = {}
+    excluded_results = 0
+    for result in results:
+        test_id = result.get("test_id")
+        detail = result.get("detail")
+        if test_id not in TESTS_BY_ID or (
+            isinstance(detail, dict) and detail.get("error")
+        ):
+            excluded_results += 1
+            continue
+        usable[test_id] = result
+
+    expected = (
+        list(dict.fromkeys(
+            test_id for test_id in expected_test_ids if test_id in TESTS_BY_ID
+        ))
+        if expected_test_ids is not None
+        else sorted(usable)
+    )
+    missing = sorted(set(expected) - set(usable))
     weighted_sum = 0.0
     weight_total = 0.0
     cat_sums: dict[str, float] = {}
     cat_weights: dict[str, float] = {}
 
-    for r in results:
-        test = TESTS_BY_ID.get(r["test_id"])
-        if not test:
-            continue
-        n = normalize(r["value"], test.direction)
-        weighted_sum += n * test.weight
+    for test_id, result in usable.items():
+        test = TESTS_BY_ID[test_id]
+        normalized = normalize(result["value"], test.direction)
+        weighted_sum += normalized * test.weight
         weight_total += test.weight
-        cat_sums[test.category] = cat_sums.get(test.category, 0) + n * test.weight
-        cat_weights[test.category] = cat_weights.get(test.category, 0) + test.weight
+        cat_sums[test.category] = cat_sums.get(test.category, 0.0) + normalized * test.weight
+        cat_weights[test.category] = cat_weights.get(test.category, 0.0) + test.weight
 
-    by_cat = {c: cat_sums[c] / cat_weights[c] for c in cat_sums if cat_weights.get(c)}
-    return {"total": weighted_sum / weight_total if weight_total else 0.0,
-            "by_category": by_cat}
+    by_category = {
+        category: cat_sums[category] / cat_weights[category]
+        for category in cat_sums if cat_weights.get(category)
+    }
+    total = weighted_sum / weight_total if weight_total else 0.0
+    if expected_test_ids is not None and missing:
+        total = None
+
+    return {
+        "total": total,
+        "by_category": by_category,
+        "coverage": {
+            "evaluated": len(set(expected) & set(usable)),
+            "expected": len(expected),
+            "fraction": (
+                len(set(expected) & set(usable)) / len(expected)
+                if expected else 1.0
+            ),
+        },
+        "missing_tests": missing,
+        "excluded_results": excluded_results,
+    }
 
 
 # ============================================================================
@@ -1407,7 +1448,7 @@ def global_score(results: list[dict]) -> dict:
 
 def build_report(audit: dict, results: list[dict]) -> str:
     cfg = audit.get("config", {})
-    score = global_score(results)
+    score = global_score(results, expected_test_ids=cfg.get("tests"))
     passed = sum(1 for r in results if r["passed"])
     total = len(results)
 
@@ -1419,7 +1460,16 @@ def build_report(audit: dict, results: list[dict]) -> str:
     lines.append(f"**Modelo:** {cfg.get('provider', {}).get('model', 'desconocido')}  ")
     lines.append(f"**Endpoint:** {cfg.get('provider', {}).get('base_url', '')}  ")
     lines.append(f"**Fecha:** {audit['created_at']}  ")
-    lines.append(f"**Score global:** {(score['total'] * 100):.1f}/100  ")
+    if score["total"] is None:
+        coverage = score["coverage"]
+        lines.append(
+            f"**Score global:** No disponible — cobertura incompleta "
+            f"({coverage['evaluated']}/{coverage['expected']} tests evaluables)  "
+        )
+    else:
+        lines.append(f"**Score global:** {(score['total'] * 100):.1f}/100  ")
+    if score["excluded_results"]:
+        lines.append(f"**Resultados excluidos del score:** {score['excluded_results']}  ")
     lines.append(f"**Tests superados:** {passed}/{total}\n")
     if audit.get("status") and audit["status"] != "completed":
         lines.append(f"**Estado:** {audit['status']}")
