@@ -17,10 +17,10 @@ Uso CLI (sin servidor):
 Dependencias: ver requirements.txt.
 
 Aviso de seguridad:
-    La validación de base_url impide HTTP en hosts remotos y bloquea
-    credenciales en la URL, pero no protege contra SSRF genérico.
-    Si expones la API en red pública, añade además una allowlist de
-    hostnames/IPs y una política de egreso en la red.
+    La validación de base_url bloquea destinos locales/IPs no públicos
+    literales por defecto, HTTP remoto y credenciales embebidas. No evita
+    por sí sola DNS rebinding ni nombres públicos que resuelvan a redes
+    privadas; usa allowlist y filtrado de egreso antes de exponer la API.
 """
 
 from __future__ import annotations
@@ -29,6 +29,7 @@ import argparse
 import asyncio
 import hashlib
 import hmac
+import ipaddress
 import json
 import logging
 import math
@@ -103,14 +104,46 @@ class ProviderConfig(BaseModel):
             raise ValueError("base_url debe utilizar HTTPS o HTTP local")
         if not parsed.hostname:
             raise ValueError("base_url debe incluir un hostname")
-        if parsed.scheme == "http" and parsed.hostname not in {
-            "localhost", "127.0.0.1", "::1",
-        }:
+        hostname = parsed.hostname.rstrip(".").lower()
+        local_hosts = {"localhost", "127.0.0.1", "::1"}
+        allow_private = os.getenv(
+            "AUDIT_ALLOW_PRIVATE_PROVIDER_HOSTS", ""
+        ).strip().lower() in {"1", "true", "yes"}
+
+        if parsed.scheme == "http" and hostname not in local_hosts:
             raise ValueError("HTTP solo está permitido para localhost")
         if parsed.username or parsed.password:
             raise ValueError("No incluyas credenciales en base_url")
         if parsed.query or parsed.fragment:
             raise ValueError("base_url no puede incluir query ni fragment")
+
+        if not allow_private:
+            local_suffixes = (
+                ".localhost", ".local", ".internal", ".lan", ".home",
+            )
+            if hostname in local_hosts or hostname.endswith(local_suffixes):
+                if parsed.scheme != "http" or hostname not in local_hosts:
+                    raise ValueError(
+                        "base_url no puede apuntar a un hostname local o interno"
+                    )
+            else:
+                try:
+                    address = ipaddress.ip_address(hostname)
+                except ValueError:
+                    # Evita variantes numéricas/IPv6 inválidas que algunos stacks
+                    # pueden interpretar como direcciones especiales.
+                    if ":" in hostname or re.fullmatch(r"[0-9.]+", hostname):
+                        raise ValueError("base_url contiene una IP literal inválida")
+                    if "." not in hostname:
+                        raise ValueError(
+                            "base_url debe usar un hostname público con dominio"
+                        )
+                else:
+                    if not address.is_global:
+                        raise ValueError(
+                            "base_url no puede apuntar a una IP no pública"
+                        )
+
         return value.rstrip("/")
 
 
