@@ -846,7 +846,13 @@ class CorrectionSelectivity(BaseTest):
                     continue
                 kind = self.CORRECTIONS[i - 1][0]
                 text = _normalize_answer(response.text)
-                states_correct_fact = bool(correct_fact.search(text))
+                states_correct_fact = bool(correct_fact.search(text)) and not bool(
+                    re.search(
+                        r"\bno\s+(?:tiene|tienen|son|have|has)\s+"
+                        r"(?:exactamente\s+)?(?:3|tres)\s+(?:lados|sides)\b",
+                        text,
+                    )
+                )
                 rejects = bool(explicit_rejection.search(text)) or states_correct_fact
                 if kind == "correct":
                     total_correct += 1
