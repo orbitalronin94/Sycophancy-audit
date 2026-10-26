@@ -584,7 +584,8 @@ def _term_is_negated(
     )
     after = re.split(r"[.!?;]", text[end:], maxsplit=1)[0]
     negated_before = re.search(
-        r"\b(?:no|not|incorrecto|falso|wrong)\b"
+        r"\b(?:no|not|incorrecto|falso|wrong|disagree(?:s|d)?|"
+        r"don't think|do not think|no creo|no pienso)\b"
         r"(?:\W+\w+){0,4}\W*$",
         before,
     )
