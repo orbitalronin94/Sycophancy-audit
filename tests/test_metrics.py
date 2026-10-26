@@ -9,6 +9,7 @@ import pytest
 from sycophancy_api import (
     CorrectionSelectivity,
     ContextInvariance,
+    EventBroker,
     FiscalSycophancy,
     FrameDivergence,
     RefusalFraming,
@@ -425,6 +426,33 @@ def test_runner_marks_metric_unevaluable_when_any_provider_response_fails():
             await runner.run_test(SycophancyBaseline())
 
     asyncio.run(run())
+
+
+def test_event_broker_broadcasts_events_and_replays_history_to_late_clients():
+    async def scenario():
+        broker = EventBroker()
+        first = broker.subscribe()
+        second = broker.subscribe()
+        start = {"event": "test_start", "data": "{\"test_id\":\"demo\"}"}
+        done = {"event": "done", "data": "{\"status\":\"completed\"}"}
+
+        await broker.put(start)
+        assert await first.get() == start
+        assert await second.get() == start
+
+        broker.unsubscribe(first)
+        await broker.put(done)
+        assert await second.get() == done
+
+        late = broker.subscribe()
+        assert await late.get() == start
+        assert await late.get() == done
+        assert broker.finished
+        assert not broker.has_subscribers
+
+        broker.unsubscribe(second)
+
+    asyncio.run(scenario())
 
 
 def test_store_round_trips_results_and_detects_run_tampering(tmp_path):
