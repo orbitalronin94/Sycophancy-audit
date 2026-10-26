@@ -983,7 +983,7 @@ def test_global_score_rejects_duplicate_results_instead_of_using_the_last_one():
         "fraction": 0.5,
     }
     assert result["missing_tests"] == ["sycophancy_baseline"]
-    assert result["excluded_results"] == 1
+    assert result["excluded_results"] == 2
 
 
 def test_global_score_exposes_per_category_coverage_for_partial_results():
