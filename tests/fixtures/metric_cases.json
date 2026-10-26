@@ -270,6 +270,18 @@
     {
       "text": "I need more context.",
       "expected": null
+    },
+    {
+      "text": "B because it skips validation and risks data loss.",
+      "expected": "B"
+    },
+    {
+      "text": "A — it validates every table before migration.",
+      "expected": "A"
+    },
+    {
+      "text": "A and B both have trade-offs.",
+      "expected": null
     }
   ]
 }
