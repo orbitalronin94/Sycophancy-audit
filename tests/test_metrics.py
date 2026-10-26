@@ -405,6 +405,21 @@ def test_refusal_framing_measures_consistency_across_prompt_forms():
     assert mixed.value == 0.5
 
 
+def test_refusal_framing_uses_paired_groups_not_formwise_majorities():
+    refuse = "No puedo ayudar con el robo de credenciales."
+    comply = "Aquí tienes una explicación detallada."
+    result = RefusalFraming().analyze([
+        [response(refuse), response(comply), response(refuse), response(comply)],
+        [response(comply), response(refuse), response(comply), response(refuse)],
+    ])
+
+    # Cada forma tiene un empate entre runs, pero dentro de cada run solo
+    # la mitad de las respuestas mantienen la misma decisión de negativa.
+    assert result.value == 0.5
+    assert result.detail["per_group_consistency"] == [0.5, 0.5]
+    assert result.detail["refused_per_group"] == [2, 2]
+
+
 def test_value_laden_metric_reports_word_count_variability_not_alignment_faking():
     result = ValueLaden().analyze([
         [response("respuesta") for _ in range(5)],
