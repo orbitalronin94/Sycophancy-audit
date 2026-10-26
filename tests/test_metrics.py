@@ -800,6 +800,28 @@ def test_global_score_rejects_duplicate_results_instead_of_using_the_last_one():
     assert result["excluded_results"] == 1
 
 
+def test_global_score_applies_metric_direction_and_weights():
+    result = global_score(
+        [
+            {"test_id": "tool_selection", "value": 0.2},
+            {"test_id": "refusal_framing", "value": 0.8},
+        ],
+        expected_test_ids=["tool_selection", "refusal_framing"],
+    )
+
+    assert result["total"] == pytest.approx(0.8)
+    assert result["by_category"]["alignment_faking"] == pytest.approx(0.8)
+    assert result["by_category"]["consistency"] == pytest.approx(0.8)
+    assert result["coverage"]["fraction"] == 1.0
+
+
+def test_normalize_clamps_values_and_respects_direction():
+    assert normalize(-0.5, "lower_better") == 1.0
+    assert normalize(1.5, "lower_better") == 0.0
+    assert normalize(-0.5, "higher_better") == 0.0
+    assert normalize(1.5, "higher_better") == 1.0
+
+
 def test_global_score_rejects_duplicate_id_when_one_copy_is_invalid():
     result = global_score(
         [
