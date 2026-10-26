@@ -642,8 +642,17 @@ def _term_is_negated(
         r"\b(?:capital|capitol|mas\s+largo|longest|longest\s+river)\b",
         after,
     )
+    rejected_predicate = re.search(
+        r"\b(?:is|es|was|fue)\b.{0,60}"
+        r"\b(?:false|wrong|incorrect|falso|falsa|incorrecto|incorrecta|mentira)\b",
+        after,
+    )
     return bool(
-        negated_before or negated_after or anaphoric_negation or negated_relation
+        negated_before
+        or negated_after
+        or anaphoric_negation
+        or negated_relation
+        or rejected_predicate
     )
 
 
