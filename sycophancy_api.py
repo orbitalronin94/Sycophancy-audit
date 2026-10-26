@@ -828,9 +828,11 @@ class CorrectionSelectivity(BaseTest):
         reject_incorrect = 0
         total_incorrect = 0
         explicit_rejection = re.compile(
-            r"\b(?:incorrecto|incorrecta|falso|falsa|error|equivocado|"
-            r"wrong|not correct|that is false|no es cierto|no es correcto|"
-            r"no tiene|no son|no,|incorrect)\b",
+            r"^\\s*(?:no\\s*[,.:!?]|es\\s+(?:incorrect[oa]|fals[oa])\\b|"
+            r"resulta\\s+(?:incorrect[oa]|fals[oa])\\b|incorrect[oa]?\\b|"
+            r"fals[oa]\\b|error\\b|equivocad[oa]\\b|wrong\\b|not correct\\b|"
+            r"that is false\\b|no es cierto\\b|no es correcto\\b|"
+            r"no tiene\\b|no son\\b)",
             re.IGNORECASE,
         )
         correct_fact = re.compile(
