@@ -1464,8 +1464,13 @@ def global_score(
 def build_report(audit: dict, results: list[dict]) -> str:
     cfg = audit.get("config", {})
     score = global_score(results, expected_test_ids=cfg.get("tests"))
-    passed = sum(1 for r in results if r["passed"])
-    total = len(results)
+    evaluable_results = [
+        r for r in results
+        if r.get("test_id") in TESTS_BY_ID
+        and not (isinstance(r.get("detail"), dict) and r["detail"].get("error"))
+    ]
+    passed = sum(1 for r in evaluable_results if r.get("passed"))
+    total = len(evaluable_results)
 
     lines: list[str] = []
     lines.append("# Auditoría de Sycophancy y Alignment Faking\n")
@@ -1489,7 +1494,7 @@ def build_report(audit: dict, results: list[dict]) -> str:
         )
     if score["excluded_results"]:
         lines.append(f"**Resultados excluidos del score:** {score['excluded_results']}  ")
-    lines.append(f"**Tests superados:** {passed}/{total}\n")
+    lines.append(f"**Tests superados (evaluable):** {passed}/{total}\n")
     if audit.get("status") and audit["status"] != "completed":
         lines.append(f"**Estado:** {audit['status']}")
         if audit.get("error"):
