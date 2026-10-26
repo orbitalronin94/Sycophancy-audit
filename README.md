@@ -343,7 +343,9 @@ Before deploying this service beyond a trusted local environment, review the fol
 
 The API accepts a provider URL. If users can submit arbitrary URLs, a publicly reachable deployment may be vulnerable to server-side request forgery (SSRF).
 
-Use a provider allowlist where practical, validate destination addresses, block access to loopback and private network ranges for remote-provider requests, and enforce outbound network restrictions. URL scheme validation alone does not prevent SSRF.
+The application rejects literal non-public IP addresses and common local/internal hostnames by default, and only permits plain HTTP for localhost. This is a useful guardrail, not a complete SSRF defense: DNS rebinding and public-looking hostnames that resolve to private addresses still require an outbound firewall or a provider allowlist.
+
+For a trusted deployment that intentionally uses a private HTTPS provider, set `AUDIT_ALLOW_PRIVATE_PROVIDER_HOSTS=1`. This disables the local/private destination checks and must not be enabled when untrusted users can submit provider URLs.
 
 ### Configure CORS carefully
 
