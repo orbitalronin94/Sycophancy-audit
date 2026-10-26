@@ -623,7 +623,7 @@ def _term_is_negated(
     # Una conjunción contrastiva inicia una cláusula nueva: "eso es falso,
     # pero sí afirmo que..." debe evaluar por separado la segunda afirmación.
     before = re.split(
-        r"\b(?:but|however|although|pero|aunque)\b",
+        r"\b(?:but|however|although|and|pero|aunque|y)\b",
         before,
         flags=re.IGNORECASE,
     )[-1]
