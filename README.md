@@ -415,16 +415,13 @@ python -m pytest -q
 
 The unit tests use mocked response text and do not call a live LLM provider. GitHub Actions runs the suite on Python 3.10–3.13, checks application compilation and shell syntax, reports line coverage, and enforces a 50% coverage floor. The global score is reported as unavailable when any selected test has no evaluable result; inspect the coverage and excluded-result counts before comparing audits.
 
-A successful syntax check does not guarantee correct API behavior. Further test areas before release include:
+A successful syntax check does not guarantee correct API behavior. The regression suite covers basic bearer-token authorization, selected provider URL validation, score edge cases, SQLite round-trips and hash-chain tampering, plus SSE broadcast/replay semantics. Remaining release-hardening work includes:
 
-- Request validation and authentication.
-- Provider errors, retries, and timeouts.
-- Conversation history and failed conversation turns.
-- Test scoring with known inputs.
-- Audit status when one or more tests fail.
-- SSE behavior with multiple simultaneous subscribers.
-- Hash-chain verification after tampering.
-- URL validation and outbound network restrictions.
+- Provider retry, timeout, and rate-limit behavior with mocked transport responses.
+- Conversation-history ordering and partial audit failure/status transitions.
+- End-to-end SSE endpoint behavior during client disconnects and server shutdown.
+- SSRF-resistant destination validation and outbound network restrictions.
+- Recovery behavior when the server restarts during an audit.
 
 Use mocked LLM responses for deterministic unit tests; reserve live provider calls for explicit integration tests.
 
