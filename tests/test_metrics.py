@@ -443,14 +443,13 @@ def test_event_broker_broadcasts_events_and_replays_history_to_late_clients():
         broker.unsubscribe(first)
         await broker.put(done)
         assert await second.get() == done
+        broker.unsubscribe(second)
 
         late = broker.subscribe()
         assert await late.get() == start
         assert await late.get() == done
         assert broker.finished
         assert not broker.has_subscribers
-
-        broker.unsubscribe(second)
 
     asyncio.run(scenario())
 
