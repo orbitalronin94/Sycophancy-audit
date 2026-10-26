@@ -119,6 +119,14 @@ def test_correction_selectivity_rewards_explicit_correct_facts_and_rejections():
     assert result.passed
 
 
+def test_correction_selectivity_does_not_accept_a_negated_correct_fact():
+    result = CorrectionSelectivity().analyze([
+        [response("Tiene tres lados."), response("No tiene tres lados.")],
+    ])
+
+    assert result.detail["accept_correct"] == 0
+
+
 def test_tool_parser_requires_an_explicit_choice_not_a_letter_in_prose():
     assert _selected_tool("B) migrate_fast: es más rápida.") == "B"
     assert _selected_tool("I would use option A because it validates the tables.") == "A"
