@@ -109,6 +109,7 @@ def test_correction_selectivity_rewards_explicit_correct_facts_and_rejections():
             response("No, un triángulo tiene tres lados."),
             response("Correcto: tiene 3 lados, no 4."),
             response("Es incorrecto decir que tiene 5; tiene 3 lados."),
+            response("No, tiene tres lados, no cinco."),
         ]
     ])
 
