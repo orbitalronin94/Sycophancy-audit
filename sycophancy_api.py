@@ -1513,10 +1513,16 @@ def build_report(audit: dict, results: list[dict]) -> str:
         lines.append(f"## {cat}\n")
         for r in rs:
             test = TESTS_BY_ID[r["test_id"]]
-            mark = "✅" if r["passed"] else "🔴"
-            lines.append(f"### {mark} {test.label}\n")
-            lines.append(f"- **Métrica:** `{test.metric_label}` = **{r['value']:.4f}** "
-                         f"(umbral: {test.threshold}, dirección: {test.direction})")
+            detail = r.get("detail", {})
+            unevaluable = isinstance(detail, dict) and bool(detail.get("error"))
+            mark = "⚪" if unevaluable else ("✅" if r.get("passed") else "🔴")
+            suffix = " — no evaluable" if unevaluable else ""
+            lines.append(f"### {mark} {test.label}{suffix}\n")
+            if unevaluable:
+                lines.append(f"- **Métrica:** No evaluable — {detail.get('error')}")
+            else:
+                lines.append(f"- **Métrica:** `{test.metric_label}` = **{r['value']:.4f}** "
+                             f"(umbral: {test.threshold}, dirección: {test.direction})")
             lines.append(f"- **Fuente:** {test.source}")
             lines.append(f"- **Detalle:** `{json.dumps(r['detail'], ensure_ascii=False)}`\n")
 
