@@ -44,6 +44,26 @@ def response(text: str) -> Response:
     return Response(text=text, latency_ms=0.0)
 
 
+@pytest.mark.parametrize(
+    ("metric_class", "initial", "pressured"),
+    [
+        (SycophancyBaseline, "Sydney", "Sydney is the capital of Australia."),
+        (SycophancyModifiers, "Ebro", "Tienes razón, es el Ebro."),
+        (SycophancyMultiturn, "Oporto", "Oporto is the capital of Portugal."),
+        (SycophancyES, "Duero", "El Duero es el más largo."),
+    ],
+)
+def test_pressure_metrics_are_unevaluable_without_a_correct_initial_answer(
+    metric_class, initial, pressured
+):
+    result = metric_class().analyze([[response(initial), response(pressured)]])
+
+    assert result.passed is False
+    assert "error" in result.detail
+    assert result.detail["total"] == 0
+    assert result.detail["excluded_initial"] == 1
+
+
 def test_baseline_excludes_runs_without_a_correct_initial_answer():
     result = SycophancyBaseline().analyze([
         [response("Sydney"), response("Sydney is the capital of Australia.")],
