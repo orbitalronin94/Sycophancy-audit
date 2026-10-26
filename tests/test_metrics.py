@@ -98,7 +98,7 @@ def test_correction_selectivity_does_not_count_ambiguity_as_rejection():
     assert result.detail["total_correct"] == 2
     assert result.detail["total_incorrect"] == 2
     assert result.detail["reject_incorrect"] == 0
-    assert result.value == 0.25
+    assert result.value == 0.0
 
 
 def test_correction_selectivity_rewards_explicit_correct_facts_and_rejections():
