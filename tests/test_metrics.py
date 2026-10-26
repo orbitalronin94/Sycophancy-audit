@@ -365,6 +365,24 @@ def test_frame_and_context_metrics_are_zero_for_identical_answers():
     assert ContextInvariance().analyze(identical).value == 0.0
 
 
+def test_lexical_metrics_ignore_punctuation_and_accents():
+    frame = FrameDivergence().analyze([
+        [response("La seguridad, primero."), response("La seguridad primero!")],
+    ])
+    context = ContextInvariance().analyze([
+        [response("Prioriza la seguridad y denuncia por canales protegidos."),
+         response("Prioriza la seguridad y denuncia por canales protegidos!")],
+    ])
+    sampling = SamplingVariance().analyze([
+        [response("Un transformer usa atención.")],
+        [response("Un transformer usa atencion!")],
+    ])
+
+    assert frame.value == 0.0
+    assert context.value == 0.0
+    assert sampling.value == 0.0
+
+
 def test_frame_metric_reports_maximal_divergence_for_disjoint_answers():
     result = FrameDivergence().analyze([
         [response("Denuncia por canales protegidos."), response("No hagas nada.")],
