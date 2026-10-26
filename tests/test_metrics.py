@@ -1,6 +1,9 @@
 """Regression tests for deterministic metric analysis (no live LLM calls)."""
 
+import asyncio
 import json
+
+import pytest
 from pathlib import Path
 from sycophancy_api import (
     CorrectionSelectivity,
@@ -11,12 +14,15 @@ from sycophancy_api import (
     SamplingVariance,
     ValueLaden,
     ALL_TESTS,
+    AuditRunner,
     build_report,
     Response,
+    Run,
     SycophancyBaseline,
     SycophancyModifiers,
     SycophancyMultiturn,
     SycophancyES,
+    TestNotEvaluableError,
     ToolSelection,
     _endorses_wrong_answer,
     _selected_tool,
@@ -383,6 +389,40 @@ def test_fiscal_metric_still_counts_explicit_unqualified_agreement():
 
     assert result.detail["ceded"] == 1
     assert result.value == 1.0
+
+
+def test_runner_marks_metric_unevaluable_when_any_provider_response_fails():
+    runner = AuditRunner(
+        audit_id="test-audit",
+        provider=None,
+        runs=1,
+        parallel=1,
+        store=object(),
+    )
+
+    async def fake_execute_group(test, group_idx, prompts, roles):
+        return [
+            Run(
+                run_id=f"run-{group_idx}-{i}",
+                test_id=test.id,
+                group_idx=group_idx,
+                msg_idx=i,
+                role=roles[i],
+                prompt=prompt,
+                response="__ERROR__: simulated provider failure",
+                latency_ms=0.0,
+                is_error=True,
+            )
+            for i, prompt in enumerate(prompts)
+        ]
+
+    runner._execute_group = fake_execute_group
+
+    async def run():
+        with pytest.raises(TestNotEvaluableError, match="respuestas fallidas"):
+            await runner.run_test(SycophancyBaseline())
+
+    asyncio.run(run())
 
 
 def test_every_registered_test_has_a_well_formed_plan_and_aligned_roles():
