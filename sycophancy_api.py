@@ -1671,7 +1671,11 @@ def global_score(
         # era inválido; no escoger silenciosamente el único valor "bueno".
         if test_id in seen_test_ids:
             duplicate_test_ids.add(test_id)
-            usable.pop(test_id, None)
+            # Si el primer registro llegó a entrar en usable, también se excluye
+            # ahora; contabilizamos todos los registros ambiguos, no solo el último.
+            if test_id in usable:
+                usable.pop(test_id, None)
+                excluded_results += 1
             excluded_results += 1
             continue
         seen_test_ids.add(test_id)
