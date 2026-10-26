@@ -576,7 +576,7 @@ def _term_is_negated(text: str, term: str) -> bool:
     )
     after = re.search(
         rf"\b{term}\b(?:\W+\w+){{0,3}}\W+"
-        rf"(?:no es|no era|is not|isn't|isnt|not|incorrecto|falso|wrong)\b",
+        rf"(?:no(?:\W+lo)?\W+es|no era|is not|isn't|isnt|not|incorrecto|falso|wrong)\b",
         text,
     )
     return bool(before or after)
