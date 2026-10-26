@@ -758,6 +758,133 @@ def test_store_round_trips_results_and_detects_run_tampering(tmp_path):
     asyncio.run(scenario())
 
 
+@pytest.mark.parametrize("method_name", ["ask", "ask_with_history"])
+def test_llm_client_retries_transient_errors(method_name, monkeypatch):
+    class TransientError(Exception):
+        pass
+
+    client = LLMClient.__new__(LLMClient)
+    client.sem = asyncio.Semaphore(1)
+    calls = 0
+
+    async def no_sleep(_delay):
+        return None
+
+    async def fake_request(*_args, **_kwargs):
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            raise TransientError("temporary outage")
+        return response("recovered")
+
+    monkeypatch.setattr(api, "APIConnectionError", TransientError)
+    monkeypatch.setattr(api, "MAX_RETRIES", 2)
+    monkeypatch.setattr(api.asyncio, "sleep", no_sleep)
+    setattr(client, "_ask_once" if method_name == "ask" else "_ask_with_history_once", fake_request)
+
+    async def scenario():
+        if method_name == "ask":
+            return await client.ask("prompt")
+        return await client.ask_with_history([{"role": "user", "content": "prompt"}])
+
+    result = asyncio.run(scenario())
+
+    assert calls == 2
+    assert result.text == "recovered"
+    assert result.is_error is False
+
+
+@pytest.mark.parametrize("method_name", ["ask", "ask_with_history"])
+def test_llm_client_fails_closed_after_transient_retries(method_name, monkeypatch):
+    class TransientError(Exception):
+        pass
+
+    client = LLMClient.__new__(LLMClient)
+    client.sem = asyncio.Semaphore(1)
+    calls = 0
+
+    async def no_sleep(_delay):
+        return None
+
+    async def fake_request(*_args, **_kwargs):
+        nonlocal calls
+        calls += 1
+        raise TransientError("sensitive upstream detail")
+
+    monkeypatch.setattr(api, "APIConnectionError", TransientError)
+    monkeypatch.setattr(api, "MAX_RETRIES", 2)
+    monkeypatch.setattr(api.asyncio, "sleep", no_sleep)
+    setattr(client, "_ask_once" if method_name == "ask" else "_ask_with_history_once", fake_request)
+
+    async def scenario():
+        if method_name == "ask":
+            return await client.ask("prompt")
+        return await client.ask_with_history([{"role": "user", "content": "prompt"}])
+
+    result = asyncio.run(scenario())
+
+    assert calls == 2
+    assert result.is_error is True
+    assert result.text == "__ERROR__: TransientError"
+    assert "sensitive" not in result.text
+
+
+@pytest.mark.parametrize("method_name", ["ask", "ask_with_history"])
+def test_llm_client_does_not_retry_permanent_api_errors(method_name, monkeypatch):
+    class PermanentAPIError(Exception):
+        pass
+
+    client = LLMClient.__new__(LLMClient)
+    client.sem = asyncio.Semaphore(1)
+    calls = 0
+
+    async def fake_request(*_args, **_kwargs):
+        nonlocal calls
+        calls += 1
+        raise PermanentAPIError("sensitive upstream detail")
+
+    monkeypatch.setattr(api, "APIError", PermanentAPIError)
+    setattr(client, "_ask_once" if method_name == "ask" else "_ask_with_history_once", fake_request)
+
+    async def scenario():
+        if method_name == "ask":
+            return await client.ask("prompt")
+        return await client.ask_with_history([{"role": "user", "content": "prompt"}])
+
+    result = asyncio.run(scenario())
+
+    assert calls == 1
+    assert result.is_error is True
+    assert result.text == "__ERROR__: PermanentAPIError"
+    assert "sensitive" not in result.text
+
+
+@pytest.mark.parametrize("method_name", ["ask", "ask_with_history"])
+def test_llm_client_sanitizes_unexpected_errors_without_retry(method_name, monkeypatch):
+    client = LLMClient.__new__(LLMClient)
+    client.sem = asyncio.Semaphore(1)
+    calls = 0
+
+    async def fake_request(*_args, **_kwargs):
+        nonlocal calls
+        calls += 1
+        raise ValueError("secret provider response")
+
+    setattr(client, "_ask_once" if method_name == "ask" else "_ask_with_history_once", fake_request)
+
+    async def scenario():
+        if method_name == "ask":
+            return await client.ask("prompt")
+        return await client.ask_with_history([{"role": "user", "content": "prompt"}])
+
+    result = asyncio.run(scenario())
+
+    assert calls == 1
+    assert result.is_error is True
+    assert result.text == "__ERROR__: ValueError"
+    assert "secret" not in result.text
+
+
 def test_conversation_client_preserves_user_and_assistant_history():
     client = LLMClient.__new__(LLMClient)
     client.sem = asyncio.Semaphore(1)
