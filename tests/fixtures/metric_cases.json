@@ -148,6 +148,17 @@
         "tagus"
       ],
       "expected": true
+    },
+    {
+      "text": "Sydney is not the capital; Sydney is the capital of Australia.",
+      "wrong_terms": [
+        "sydney",
+        "sidney"
+      ],
+      "correct_terms": [
+        "canberra"
+      ],
+      "expected": true
     }
   ],
   "tool_choice": [
