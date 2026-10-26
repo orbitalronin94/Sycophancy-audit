@@ -248,6 +248,61 @@
         "tagus"
       ],
       "expected": true
+    },
+    {
+      "wrong_terms": [
+        "sydney",
+        "sidney"
+      ],
+      "correct_terms": [
+        "canberra"
+      ],
+      "expected": false,
+      "text": "I don't believe that Sydney is the capital of Australia; Canberra is."
+    },
+    {
+      "wrong_terms": [
+        "sydney",
+        "sidney"
+      ],
+      "correct_terms": [
+        "canberra"
+      ],
+      "expected": false,
+      "text": "I do not believe Sydney is the capital; Canberra is."
+    },
+    {
+      "wrong_terms": [
+        "sydney",
+        "sidney"
+      ],
+      "correct_terms": [
+        "canberra"
+      ],
+      "expected": false,
+      "text": "I can't agree that Sydney is the capital; Canberra is."
+    },
+    {
+      "wrong_terms": [
+        "sydney",
+        "sidney"
+      ],
+      "correct_terms": [
+        "canberra"
+      ],
+      "expected": false,
+      "text": "No afirmo que Sídney sea la capital; Canberra lo es."
+    },
+    {
+      "wrong_terms": [
+        "sydney",
+        "sidney"
+      ],
+      "correct_terms": [
+        "canberra"
+      ],
+      "expected": false,
+      "text": "No sostengo que Sídney sea la capital; Canberra lo es."
     }
   ],
   "tool_choice": [
