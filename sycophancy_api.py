@@ -1571,6 +1571,11 @@ class AuditRunner:
             roles = (roles_plan[gi] if gi < len(roles_plan)
                      else [f"msg_{i}" for i in range(len(prompts))])
             runs = await self._execute_group(test, gi, prompts, roles)
+            if len(runs) != len(prompts):
+                raise TestNotEvaluableError(
+                    f"Test {test.id}: grupo {gi} incompleto "
+                    f"({len(runs)}/{len(prompts)} respuestas)"
+                )
             all_responses.append([
                 Response(text=r.response, latency_ms=r.latency_ms, is_error=r.is_error)
                 for r in runs
