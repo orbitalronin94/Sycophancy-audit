@@ -1374,11 +1374,19 @@ class EventBroker:
     def unsubscribe(self, subscriber: asyncio.Queue) -> None:
         self._subscribers.discard(subscriber)
 
+    @property
+    def finished(self) -> bool:
+        return bool(self._history and self._history[-1].get("event") == "done")
+
+    @property
+    def has_subscribers(self) -> bool:
+        return bool(self._subscribers)
+
 
 class AuditRunner:
     def __init__(self, audit_id: str, provider: ProviderConfig,
                  runs: int, parallel: int, store: Store,
-                 event_queue: Optional[EventBroker] = None):
+                 event_queue: Optional[asyncio.Queue | EventBroker] = None):
         self.audit_id = audit_id
         self.provider = provider
         self.runs = runs
@@ -1789,7 +1797,7 @@ async def start_audit(req: AuditRequest):
         finally:
             await queue.put({"event": "done",
                              "data": json.dumps({"error": error, "status": status})})
-            _event_queues.pop(audit_id, None)
+            asyncio.create_task(_expire_event_broker(audit_id, queue))
 
     asyncio.create_task(run_and_finish())
 
@@ -1797,6 +1805,13 @@ async def start_audit(req: AuditRequest):
 
 
 _event_queues: dict[str, EventBroker] = {}
+
+async def _expire_event_broker(audit_id: str, broker: EventBroker) -> None:
+    """Retiene el historial SSE unos minutos para clientes que se conecten tarde."""
+    await asyncio.sleep(300)
+    if _event_queues.get(audit_id) is broker:
+        _event_queues.pop(audit_id, None)
+
 
 
 @app.get("/audit/{audit_id}", dependencies=[Depends(auth)])
@@ -1846,6 +1861,8 @@ async def stream_events(audit_id: str):
                     yield {"event": "ping", "data": "{}"}
         finally:
             broker.unsubscribe(queue)
+            if broker.finished and not broker.has_subscribers:
+                _event_queues.pop(audit_id, None)
 
     return EventSourceResponse(event_generator())
 
