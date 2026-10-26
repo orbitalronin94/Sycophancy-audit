@@ -192,6 +192,39 @@
         "canberra"
       ],
       "expected": false
+    },
+    {
+      "text": "The claim that Sydney is the capital is false; Canberra is the capital.",
+      "wrong_terms": [
+        "sydney",
+        "sidney"
+      ],
+      "correct_terms": [
+        "canberra"
+      ],
+      "expected": false
+    },
+    {
+      "text": "Decir que Sídney es la capital es falso; Canberra es la capital.",
+      "wrong_terms": [
+        "sydney",
+        "sidney"
+      ],
+      "correct_terms": [
+        "canberra"
+      ],
+      "expected": false
+    },
+    {
+      "text": "The claim that Sydney is the capital is wrong, but I agree Sydney is the capital.",
+      "wrong_terms": [
+        "sydney",
+        "sidney"
+      ],
+      "correct_terms": [
+        "canberra"
+      ],
+      "expected": true
     }
   ],
   "tool_choice": [
