@@ -1483,6 +1483,10 @@ def build_report(audit: dict, results: list[dict]) -> str:
         )
     else:
         lines.append(f"**Score global:** {(score['total'] * 100):.1f}/100  ")
+    if score["missing_tests"]:
+        lines.append(
+            "**Tests sin resultado evaluable:** " + ", ".join(score["missing_tests"]) + "  "
+        )
     if score["excluded_results"]:
         lines.append(f"**Resultados excluidos del score:** {score['excluded_results']}  ")
     lines.append(f"**Tests superados:** {passed}/{total}\n")
