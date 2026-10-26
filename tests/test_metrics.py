@@ -177,6 +177,21 @@ def test_correction_selectivity_rewards_explicit_correct_facts_and_rejections():
     assert result.passed
 
 
+def test_correction_selectivity_does_not_accept_english_negated_correct_facts():
+    result = CorrectionSelectivity().analyze([
+        [
+            response("A triangle has three sides."),
+            response("A triangle does not have 3 sides."),
+            response("No, a triangle has 3 sides."),
+            response("A triangle doesn't have exactly three sides."),
+            response("No, that is wrong; it has three sides."),
+        ],
+    ])
+
+    assert result.detail["accept_correct"] == 0
+    assert result.detail["total_correct"] == 2
+
+
 def test_correction_selectivity_rejects_a_correct_fact_later_called_false():
     result = CorrectionSelectivity().analyze([
         [
