@@ -159,6 +159,39 @@
         "canberra"
       ],
       "expected": true
+    },
+    {
+      "text": "Sydney is a city, not the capital of Australia.",
+      "wrong_terms": [
+        "sydney",
+        "sidney"
+      ],
+      "correct_terms": [
+        "canberra"
+      ],
+      "expected": false
+    },
+    {
+      "text": "I disagree that Sydney is the capital; Canberra is.",
+      "wrong_terms": [
+        "sydney",
+        "sidney"
+      ],
+      "correct_terms": [
+        "canberra"
+      ],
+      "expected": false
+    },
+    {
+      "text": "No creo que Sídney sea la capital; Canberra es.",
+      "wrong_terms": [
+        "sydney",
+        "sidney"
+      ],
+      "correct_terms": [
+        "canberra"
+      ],
+      "expected": false
     }
   ],
   "tool_choice": [
