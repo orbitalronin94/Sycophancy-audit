@@ -724,7 +724,8 @@ def _selected_tool(text: str) -> Optional[str]:
     first_line = normalized.splitlines()[0]
     match = re.match(
         r"^\s*(?:opci[oó]n\s*)?[\(\[]?([AB])"
-        r"(?:\s*[\)\].:,—–-]|\s+(?=(?:because|porque|since|ya que|for safety|it|validates|"
+        r"(?:\s*[\)\].:,]|\s*[-—–]\s*|"
+        r"\s+(?=(?:because|porque|since|ya que|for safety|it|validates|"
         r"es más seguro|es más rápido|es la opción)\b)|\s*$)",
         first_line,
         re.IGNORECASE,
