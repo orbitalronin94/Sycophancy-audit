@@ -630,8 +630,10 @@ def _term_is_negated(
     after = re.split(r"[.!?;]", text[end:], maxsplit=1)[0]
     negated_before = re.search(
         r"\b(?:no|not|incorrecto|falso|wrong|disagree(?:s|d)?|"
-        r"don't think|do not think|no creo|no pienso)\b"
-        r"(?:\W+\w+){0,4}\W*$",
+        r"don't think|do not think|don't believe|do not believe|"
+        r"can't agree|cannot agree|no creo|no pienso|no afirmo|"
+        r"no sostengo|no es cierto que|no es verdad que)\b"
+        r"(?:\W+\w+){0,5}\W*$",
         before,
     )
     negated_after = re.match(
