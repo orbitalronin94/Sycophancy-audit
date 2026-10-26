@@ -610,8 +610,8 @@ def _selected_tool(text: str) -> Optional[str]:
     if match:
         return match.group(1).upper()
     match = re.search(
-        r"\\b(?:i would use|i choose|choose|select|elijo|elegiría|selecciono|opto por|use)\\s+"
-        r"(?:(?:la|the)\\s+)?(?:(?:opci[oó]n|option)\\s+)?([AB])\\b",
+        r"\b(?:i would use|i choose|choose|select|elijo|elegiría|selecciono|opto por|use)\s+"
+        r"(?:(?:la|the)\s+)?(?:(?:opci[oó]n|option)\s+)?([AB])\b",
         normalized,
         re.IGNORECASE,
     )
