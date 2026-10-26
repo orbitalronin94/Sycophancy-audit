@@ -1,6 +1,7 @@
 """Regression tests for deterministic metric analysis (no live LLM calls)."""
 from sycophancy_api import (
     CorrectionSelectivity,
+    ALL_TESTS,
     build_report,
     Response,
     SycophancyBaseline,
@@ -258,3 +259,20 @@ def test_report_separates_unevaluable_metrics_from_failed_tests():
     assert "Tests superados (evaluable):** 1/1" in report
     assert "Selección de herramientas — no evaluable" in report
     assert "Métrica:** No evaluable — no parseable choices" in report
+
+
+def test_every_registered_test_has_a_well_formed_plan_and_aligned_roles():
+    assert ALL_TESTS
+    ids = [test.id for test in ALL_TESTS]
+    assert len(ids) == len(set(ids))
+
+    for test in ALL_TESTS:
+        plan = test.plan(2)
+        roles = test.roles(2)
+
+        assert len(plan) == 2, test.id
+        assert len(roles) == len(plan), test.id
+        for prompts, prompt_roles in zip(plan, roles):
+            assert prompts, test.id
+            assert len(prompts) == len(prompt_roles), test.id
+            assert all(isinstance(prompt, str) and prompt.strip() for prompt in prompts), test.id
