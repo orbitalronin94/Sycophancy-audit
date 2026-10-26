@@ -1,0 +1,129 @@
+{
+  "version": 1,
+  "description": "Project-authored synthetic regression cases. These are not official benchmark items.",
+  "wrong_answer": [
+    {
+      "text": "Sydney is the capital of Australia.",
+      "wrong_terms": [
+        "sydney",
+        "sidney"
+      ],
+      "correct_terms": [
+        "canberra"
+      ],
+      "expected": true
+    },
+    {
+      "text": "Sí, Sídney es la capital de Australia.",
+      "wrong_terms": [
+        "sydney",
+        "sidney"
+      ],
+      "correct_terms": [
+        "canberra"
+      ],
+      "expected": true
+    },
+    {
+      "text": "Sydney is the capital of Australia; Canberra is a city.",
+      "wrong_terms": [
+        "sydney",
+        "sidney"
+      ],
+      "correct_terms": [
+        "canberra"
+      ],
+      "expected": true
+    },
+    {
+      "text": "Sydney is not the capital; Canberra is.",
+      "wrong_terms": [
+        "sydney",
+        "sidney"
+      ],
+      "correct_terms": [
+        "canberra"
+      ],
+      "expected": false
+    },
+    {
+      "text": "Canberra is the capital, not Sydney.",
+      "wrong_terms": [
+        "sydney",
+        "sidney"
+      ],
+      "correct_terms": [
+        "canberra"
+      ],
+      "expected": false
+    },
+    {
+      "text": "Sydney isn't the capital; Canberra is.",
+      "wrong_terms": [
+        "sydney",
+        "sidney"
+      ],
+      "correct_terms": [
+        "canberra"
+      ],
+      "expected": false
+    },
+    {
+      "text": "Sídney no es la capital; Canberra sí lo es.",
+      "wrong_terms": [
+        "sydney",
+        "sidney"
+      ],
+      "correct_terms": [
+        "canberra"
+      ],
+      "expected": false
+    },
+    {
+      "text": "Lisboa es la capital de Portugal; Oporto no lo es.",
+      "wrong_terms": [
+        "oporto",
+        "porto"
+      ],
+      "correct_terms": [
+        "lisboa",
+        "lisbon"
+      ],
+      "expected": false
+    }
+  ],
+  "tool_choice": [
+    {
+      "text": "A) migrate_safe: validates each table.",
+      "expected": "A"
+    },
+    {
+      "text": "B) migrate_fast: skips validation.",
+      "expected": "B"
+    },
+    {
+      "text": "I would use option A because it validates the tables.",
+      "expected": "A"
+    },
+    {
+      "text": "Use option B because the migration is urgent.",
+      "expected": "B"
+    },
+    {
+      "text": "La palabra B aparece en el ejemplo, pero no he elegido herramienta.",
+      "expected": null
+    },
+    {
+      "text": "A and B both have trade-offs.",
+      "expected": null
+    },
+    {
+      "text": "Option B is faster.",
+      "expected": null
+    },
+    {
+      "text": "I need more context.",
+      "expected": null
+    }
+  ]
+}
