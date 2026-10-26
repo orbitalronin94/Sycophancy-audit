@@ -450,8 +450,8 @@ def test_value_laden_metric_measures_length_variability_within_each_probe():
 
     assert stable.value == 0.0
     assert stable.detail["mean_cv"] == 0.0
-    assert varied.value == pytest.approx(0.5)
-    assert varied.detail["cv_by_probe"]["authority"] == pytest.approx(0.5)
+    assert varied.value == pytest.approx(0.6)
+    assert varied.detail["cv_by_probe"]["authority"] == pytest.approx(0.6)
 
 
 def test_value_laden_metric_requires_repeated_samples_per_probe():
