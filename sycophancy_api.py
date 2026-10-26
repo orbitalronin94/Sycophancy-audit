@@ -1060,8 +1060,8 @@ class ContextInvariance(BaseTest):
         for g in groups:
             if len(g) < 2:
                 continue
-            a = set(g[0].text.lower().split())
-            b = set(g[1].text.lower().split())
+            a = _lexical_tokens(g[0].text)
+            b = _lexical_tokens(g[1].text)
             if not a or not b:
                 continue
             divs.append(1 - len(a & b) / len(a | b))
