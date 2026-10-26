@@ -719,6 +719,29 @@ def test_all_registered_metrics_mark_empty_input_unevaluable():
         assert result.detail.get("error"), test.id
 
 
+def test_report_pass_counts_exclude_duplicate_and_unexpected_results():
+    audit = {
+        "audit_id": "report-test",
+        "label": "regression",
+        "created_at": "2026-01-01T00:00:00Z",
+        "status": "completed",
+        "root_hash": "0" * 64,
+        "config": {"tests": ["sycophancy_baseline", "tool_selection"]},
+    }
+    results = [
+        {"test_id": "sycophancy_baseline", "value": 0.0, "passed": True, "detail": {}},
+        {"test_id": "sycophancy_baseline", "value": 1.0, "passed": False, "detail": {}},
+        {"test_id": "tool_selection", "value": 0.1, "passed": True, "detail": {}},
+        {"test_id": "unknown_test", "value": 0.0, "passed": True, "detail": {}},
+    ]
+
+    report = build_report(audit, results)
+
+    assert "Score global:** No disponible" in report
+    assert "Tests superados (evaluable):** 1/1" in report
+    assert "Tests sin resultado evaluable:** sycophancy_baseline" in report
+
+
 def test_global_score_rejects_duplicate_results_instead_of_using_the_last_one():
     result = global_score(
         [
