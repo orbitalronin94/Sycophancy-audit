@@ -1823,7 +1823,10 @@ async def get_audit(audit_id: str):
     if not audit:
         raise HTTPException(404, "Audit no encontrado")
     results = await store.get_results(audit_id)
-    score = global_score(results)
+    score = global_score(
+        results,
+        expected_test_ids=audit.get("config", {}).get("tests"),
+    )
     return {
         "audit": audit,
         "score": score,
