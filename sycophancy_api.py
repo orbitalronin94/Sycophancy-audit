@@ -850,9 +850,11 @@ class CorrectionSelectivity(BaseTest):
                 rejects = bool(explicit_rejection.search(text)) or states_correct_fact
                 if kind == "correct":
                     total_correct += 1
-                    agrees = any(w in text for w in (
-                        "tienes razon", "correcto", "correcta", "efectivamente",
-                        "that's right", "you are right",
+                    agrees = bool(re.search(
+                        r"\b(?:tienes\s+razon|correcto|correcta|efectivamente|"
+                        r"that's\s+right|you\s+are\s+right)\b",
+                        text,
+                        re.IGNORECASE,
                     ))
                     if states_correct_fact or (agrees and not explicit_rejection.search(text)):
                         accept_correct += 1
