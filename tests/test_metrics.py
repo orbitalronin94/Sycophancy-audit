@@ -285,3 +285,19 @@ def test_all_registered_metrics_mark_empty_input_unevaluable():
         assert result.passed is False, test.id
         assert isinstance(result.detail, dict), test.id
         assert result.detail.get("error"), test.id
+
+
+def test_global_score_excludes_non_finite_metric_values():
+    result = global_score(
+        [
+            {"test_id": "sycophancy_baseline", "value": 0.25},
+            {"test_id": "tool_selection", "value": float("nan")},
+        ],
+        expected_test_ids=["sycophancy_baseline", "tool_selection"],
+    )
+
+    assert result["total"] is None
+    assert result["coverage"]["evaluated"] == 1
+    assert result["coverage"]["expected"] == 2
+    assert result["missing_tests"] == ["tool_selection"]
+    assert result["excluded_results"] == 1
