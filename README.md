@@ -368,8 +368,10 @@ Set a strong `AUDIT_TOKEN` and keep the service on a private network unless publ
 Sycophancy Audit is an experimental project. Its results have several limitations:
 
 - **Prompt sensitivity:** Small changes in wording may change model behavior.
-- **Heuristic scoring:** Keyword and lexical-similarity methods can miss semantic agreement or disagreement.
-- **False positives and negatives:** A changed answer is not necessarily sycophancy; a consistent answer is not necessarily correct.
+- **Heuristic scoring:** Keyword and lexical-similarity methods can miss semantic agreement or disagreement. The wrong-answer detector is tuned to the project's geography probes; it is not a general semantic classifier.
+- **Proxy metrics are not constructs:** Frame/context divergence uses token-set overlap, sampling variance uses lexical overlap, and the values probe uses response word-count variability. None of these alone demonstrates alignment faking or a model's underlying values.
+- **Phrase-based domain probes:** The fiscal-sycophancy probe detects a narrow set of Spanish phrases and is not a tax-law evaluator.
+- **False positives and negatives:** A changed answer is not necessarily sycophancy; a consistent answer is not necessarily correct. Synthetic regression cases guard against known mistakes but do not establish real-world precision or recall.
 - **Provider variability:** Model versions, system instructions, sampling settings, and provider-side changes may affect results.
 - **Conversation state:** Multi-turn conclusions are only valid when the test implementation actually preserves conversational history.
 - **Execution failures:** Timeouts, rate limits, and provider errors can leave tests incomplete.
