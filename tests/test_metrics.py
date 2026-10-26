@@ -718,6 +718,35 @@ def test_provider_config_rejects_remote_http_and_embedded_credentials():
     assert local.base_url == "http://127.0.0.1:8000/v1"
 
 
+@pytest.mark.parametrize(
+    "base_url",
+    [
+        "https://127.0.0.1/v1",
+        "https://10.0.0.5/v1",
+        "https://169.254.169.254/latest/meta-data",
+        "https://[::1]/v1",
+        "https://localhost/v1",
+        "https://metadata.google.internal/v1",
+        "https://service.local/v1",
+        "https://intranet/v1",
+    ],
+)
+def test_provider_config_rejects_local_and_non_public_destinations_by_default(base_url):
+    with pytest.raises(ValueError):
+        ProviderConfig(base_url=base_url, api_key="secret", model="test-model")
+
+
+def test_provider_config_requires_explicit_opt_in_for_private_https_provider(monkeypatch):
+    monkeypatch.setenv("AUDIT_ALLOW_PRIVATE_PROVIDER_HOSTS", "1")
+    provider = ProviderConfig(
+        base_url="https://10.0.0.5/v1",
+        api_key="secret",
+        model="internal-model",
+    )
+
+    assert provider.base_url == "https://10.0.0.5/v1"
+
+
 def test_store_reports_missing_audit_when_verifying_chain(tmp_path):
     async def scenario():
         store = Store(tmp_path / "missing.sqlite3")
