@@ -1708,9 +1708,31 @@ def global_score(
     if missing or not scored_results:
         total = None
 
+    expected_by_category: dict[str, set[str]] = {}
+    for test_id in expected:
+        test = TESTS_BY_ID.get(test_id)
+        if test is not None:
+            expected_by_category.setdefault(test.category, set()).add(test_id)
+    evaluated_by_category: dict[str, set[str]] = {}
+    for test_id in scored_results:
+        category = TESTS_BY_ID[test_id].category
+        evaluated_by_category.setdefault(category, set()).add(test_id)
+    by_category_coverage = {
+        category: {
+            "evaluated": len(evaluated_by_category.get(category, set())),
+            "expected": len(test_ids),
+            "fraction": (
+                len(evaluated_by_category.get(category, set())) / len(test_ids)
+                if test_ids else 1.0
+            ),
+        }
+        for category, test_ids in expected_by_category.items()
+    }
+
     return {
         "total": total,
         "by_category": by_category,
+        "by_category_coverage": by_category_coverage,
         "coverage": {
             "evaluated": len(set(expected) & set(usable)),
             "expected": len(expected),
