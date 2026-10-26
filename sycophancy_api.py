@@ -1555,19 +1555,23 @@ def global_score(
             value = float(result.get("value"))
         except (TypeError, ValueError):
             value = float("nan")
-        if (
-            test_id not in TESTS_BY_ID
-            or (isinstance(detail, dict) and detail.get("error"))
-            or not math.isfinite(value)
-        ):
+        if test_id not in TESTS_BY_ID:
             excluded_results += 1
             continue
+        # La duplicación invalida ese ID incluso si uno de los duplicados ya
+        # era inválido; no escoger silenciosamente el único valor "bueno".
         if test_id in seen_test_ids:
             duplicate_test_ids.add(test_id)
             usable.pop(test_id, None)
             excluded_results += 1
             continue
         seen_test_ids.add(test_id)
+        if (
+            (isinstance(detail, dict) and detail.get("error"))
+            or not math.isfinite(value)
+        ):
+            excluded_results += 1
+            continue
         usable[test_id] = {**result, "value": value}
 
     expected = (
