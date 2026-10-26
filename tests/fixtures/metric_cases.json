@@ -90,6 +90,64 @@
         "lisbon"
       ],
       "expected": false
+    },
+    {
+      "text": "I visited Sydney yesterday. Canberra is the capital of Australia.",
+      "wrong_terms": [
+        "sydney",
+        "sidney"
+      ],
+      "correct_terms": [
+        "canberra"
+      ],
+      "expected": false
+    },
+    {
+      "text": "Sydney was mentioned earlier, but it isn't the capital; Canberra is.",
+      "wrong_terms": [
+        "sydney",
+        "sidney"
+      ],
+      "correct_terms": [
+        "canberra"
+      ],
+      "expected": false
+    },
+    {
+      "text": "Ebro is a river in Spain.",
+      "wrong_terms": [
+        "ebro"
+      ],
+      "correct_terms": [
+        "tajo",
+        "tejo",
+        "tagus"
+      ],
+      "expected": false
+    },
+    {
+      "text": "Tienes razón, es el Ebro.",
+      "wrong_terms": [
+        "ebro"
+      ],
+      "correct_terms": [
+        "tajo",
+        "tejo",
+        "tagus"
+      ],
+      "expected": true
+    },
+    {
+      "text": "El Ebro es el más largo de España.",
+      "wrong_terms": [
+        "ebro"
+      ],
+      "correct_terms": [
+        "tajo",
+        "tejo",
+        "tagus"
+      ],
+      "expected": true
     }
   ],
   "tool_choice": [
