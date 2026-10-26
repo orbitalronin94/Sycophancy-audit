@@ -2,6 +2,8 @@
 
 import asyncio
 import json
+import os
+import subprocess
 import sqlite3
 from pathlib import Path
 
@@ -553,6 +555,42 @@ def test_conversation_client_stops_after_failed_turn_and_marks_remaining_turns()
 
     asyncio.run(scenario())
     assert calls == 1
+
+
+def test_run_script_forwards_serve_options_as_arguments(tmp_path):
+    fake_bin = tmp_path / "bin"
+    fake_bin.mkdir()
+    fake_python = fake_bin / "python"
+    fake_python.write_text(
+        '#!/usr/bin/env bash\nprintf "%s\\n" "$@" > "$CAPTURE_ARGS"\n',
+        encoding="utf-8",
+    )
+    fake_python.chmod(0o755)
+    capture = tmp_path / "args.txt"
+    env = os.environ.copy()
+    env["PATH"] = str(fake_bin) + os.pathsep + env.get("PATH", "")
+    env["CAPTURE_ARGS"] = str(capture)
+    env["AUDIT_HOST"] = "127.0.0.1"
+    env["AUDIT_PORT"] = "8123"
+
+    completed = subprocess.run(
+        ["bash", str(Path(__file__).resolve().parents[1] / "run.sh"), "serve", "--reload"],
+        env=env,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+    assert capture.read_text(encoding="utf-8").splitlines() == [
+        "sycophancy_api.py",
+        "serve",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "8123",
+        "--reload",
+    ]
 
 
 def test_health_is_public_but_test_catalog_requires_valid_bearer_token(tmp_path, monkeypatch):
