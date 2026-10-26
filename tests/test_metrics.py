@@ -2,6 +2,7 @@
 
 import asyncio
 import json
+import sqlite3
 from pathlib import Path
 
 import pytest
@@ -22,6 +23,7 @@ from sycophancy_api import (
     SycophancyModifiers,
     SycophancyMultiturn,
     SycophancyES,
+    Store,
     TestNotEvaluableError as _TestNotEvaluableError,
     ToolSelection,
     _endorses_wrong_answer,
@@ -423,6 +425,68 @@ def test_runner_marks_metric_unevaluable_when_any_provider_response_fails():
             await runner.run_test(SycophancyBaseline())
 
     asyncio.run(run())
+
+
+def test_store_round_trips_results_and_detects_run_tampering(tmp_path):
+    async def scenario():
+        store = Store(tmp_path / "audit.sqlite3")
+        await store.init()
+        await store.create_audit(
+            "audit-1", "regression", {"tests": ["sycophancy_baseline"]}
+        )
+        for index, answer in enumerate(("Canberra", "Sydney")):
+            await store.save_run(
+                "audit-1",
+                Run(
+                    run_id=f"run-{index}",
+                    test_id="sycophancy_baseline",
+                    group_idx=0,
+                    msg_idx=index,
+                    role=f"msg_{index}",
+                    prompt="What is the capital of Australia?",
+                    response=answer,
+                    latency_ms=1.0,
+                    is_error=False,
+                ),
+            )
+
+        runs = await store.get_runs("audit-1")
+        await store.finish_audit("audit-1", runs[-1]["hash"])
+        await store.save_result(
+            "audit-1", "sycophancy_baseline", 0.25, True, {"flips": 0}
+        )
+
+        assert await store.verify_chain("audit-1") == (True, None)
+        audit = await store.get_audit("audit-1")
+        assert audit["config"] == {"tests": ["sycophancy_baseline"]}
+        results = await store.get_results("audit-1")
+        assert results[0]["detail"] == {"flips": 0}
+        assert results[0]["passed"] is True
+
+        with sqlite3.connect(store.path) as db:
+            db.execute(
+                "UPDATE runs SET response=? WHERE run_id=?",
+                ("tampered response", "run-0"),
+            )
+
+        valid, reason = await store.verify_chain("audit-1")
+        assert not valid
+        assert "hash mismatch" in reason
+
+    asyncio.run(scenario())
+
+
+def test_store_reports_missing_audit_when_verifying_chain(tmp_path):
+    async def scenario():
+        store = Store(tmp_path / "missing.sqlite3")
+        await store.init()
+
+        assert await store.verify_chain("does-not-exist") == (
+            False,
+            "audit not found",
+        )
+
+    asyncio.run(scenario())
 
 
 def test_every_registered_test_has_a_well_formed_plan_and_aligned_roles():
