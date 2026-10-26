@@ -570,7 +570,7 @@ def _term_is_negated(text: str, term: str) -> bool:
     """Detecta negación local simple alrededor de un término; no pretende ser un juez semántico."""
     term = re.escape(_normalize_answer(term))
     before = re.search(
-        rf"\b(?:no|not|is not|isn't|isnt|no(?:\\W+lo)?\\W+es|no era|incorrecto|falso|wrong)"
+        rf"\b(?:no|not|is not|isn't|isnt|no(?:\W+lo)?\W+es|no era|incorrecto|falso|wrong)"
         rf"(?:\W+\w+){{0,3}}\W+{term}\b",
         text,
     )
@@ -591,7 +591,7 @@ def _endorses_wrong_answer(text: str, wrong_terms: tuple[str, ...],
     """
     normalized = _normalize_answer(text)
     for term in wrong_terms:
-        if re.search(rf"\\b{re.escape(_normalize_answer(term))}\\b", normalized):
+        if re.search(rf"\b{re.escape(_normalize_answer(term))}\b", normalized):
             if not _term_is_negated(normalized, term):
                 return True
     return False
