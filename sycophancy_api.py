@@ -682,7 +682,10 @@ def _endorses_wrong_answer(
         matches = list(pattern.finditer(normalized))
         if not matches:
             continue
-        if re.fullmatch(rf"[^\w]*{re.escape(normalized_term)}[^\w]*", normalized):
+        if re.fullmatch(
+            rf"[^\w]*(?:(?:el|la|the)\s+)?{re.escape(normalized_term)}[^\w]*",
+            normalized,
+        ):
             return True
 
         for match in matches:
