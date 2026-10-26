@@ -1351,10 +1351,34 @@ def resolve_tests(requested: list[str]) -> list[BaseTest]:
 # RUNNER
 # ============================================================================
 
+class EventBroker:
+    """Difunde eventos SSE a cada suscriptor y conserva historial del audit activo."""
+
+    def __init__(self) -> None:
+        self._subscribers: set[asyncio.Queue] = set()
+        self._history: list[dict] = []
+
+    async def put(self, message: dict) -> None:
+        self._history.append(message)
+        for subscriber in tuple(self._subscribers):
+            subscriber.put_nowait(message)
+
+    def subscribe(self) -> asyncio.Queue:
+        subscriber: asyncio.Queue = asyncio.Queue()
+        for message in self._history:
+            subscriber.put_nowait(message)
+        if not self._history or self._history[-1].get("event") != "done":
+            self._subscribers.add(subscriber)
+        return subscriber
+
+    def unsubscribe(self, subscriber: asyncio.Queue) -> None:
+        self._subscribers.discard(subscriber)
+
+
 class AuditRunner:
     def __init__(self, audit_id: str, provider: ProviderConfig,
                  runs: int, parallel: int, store: Store,
-                 event_queue: Optional[asyncio.Queue] = None):
+                 event_queue: Optional[EventBroker] = None):
         self.audit_id = audit_id
         self.provider = provider
         self.runs = runs
@@ -1738,7 +1762,7 @@ async def start_audit(req: AuditRequest):
     }
     await store.create_audit(audit_id, req.label, config)
 
-    queue: asyncio.Queue = asyncio.Queue()
+    queue = EventBroker()
     _event_queues[audit_id] = queue
 
     async def run_and_finish():
@@ -1765,13 +1789,14 @@ async def start_audit(req: AuditRequest):
         finally:
             await queue.put({"event": "done",
                              "data": json.dumps({"error": error, "status": status})})
+            _event_queues.pop(audit_id, None)
 
     asyncio.create_task(run_and_finish())
 
     return {"audit_id": audit_id, "tests": [t.id for t in tests], "runs": req.runs}
 
 
-_event_queues: dict[str, asyncio.Queue] = {}
+_event_queues: dict[str, EventBroker] = {}
 
 
 @app.get("/audit/{audit_id}", dependencies=[Depends(auth)])
@@ -1804,19 +1829,23 @@ async def get_audit(audit_id: str):
 @app.get("/audit/{audit_id}/events", dependencies=[Depends(auth)])
 async def stream_events(audit_id: str):
 
-    queue = _event_queues.get(audit_id)
-    if queue is None:
+    broker = _event_queues.get(audit_id)
+    if broker is None:
         raise HTTPException(404, "Audit no encontrado o sin stream")
+    queue = broker.subscribe()
 
     async def event_generator():
-        while True:
-            try:
-                msg = await asyncio.wait_for(queue.get(), timeout=300)
-                yield {"event": msg["event"], "data": msg["data"]}
-                if msg["event"] == "done":
-                    break
-            except asyncio.TimeoutError:
-                yield {"event": "ping", "data": "{}"}
+        try:
+            while True:
+                try:
+                    msg = await asyncio.wait_for(queue.get(), timeout=300)
+                    yield {"event": msg["event"], "data": msg["data"]}
+                    if msg["event"] == "done":
+                        break
+                except asyncio.TimeoutError:
+                    yield {"event": "ping", "data": "{}"}
+        finally:
+            broker.unsubscribe(queue)
 
     return EventSourceResponse(event_generator())
 
