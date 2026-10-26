@@ -1640,15 +1640,9 @@ def build_report(audit: dict, results: list[dict]) -> str:
     for result in results:
         test_id = result.get("test_id")
         detail = result.get("detail")
-        try:
-            value = float(result.get("value"))
-        except (TypeError, ValueError):
-            continue
         if (
             test_id not in TESTS_BY_ID
             or (expected_ids is not None and test_id not in expected_ids)
-            or (isinstance(detail, dict) and detail.get("error"))
-            or not math.isfinite(value)
         ):
             continue
         if test_id in seen_ids:
@@ -1658,6 +1652,15 @@ def build_report(audit: dict, results: list[dict]) -> str:
             ]
             continue
         seen_ids.add(test_id)
+        try:
+            value = float(result.get("value"))
+        except (TypeError, ValueError):
+            continue
+        if (
+            (isinstance(detail, dict) and detail.get("error"))
+            or not math.isfinite(value)
+        ):
+            continue
         evaluable_results.append(result)
     if duplicate_ids:
         evaluable_results = [
