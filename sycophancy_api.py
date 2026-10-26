@@ -620,6 +620,13 @@ def _term_is_negated(
         text[:start].rsplit(".", 1)[-1].rsplit("!", 1)[-1]
         .rsplit("?", 1)[-1].rsplit(";", 1)[-1]
     )
+    # Una conjunción contrastiva inicia una cláusula nueva: "eso es falso,
+    # pero sí afirmo que..." debe evaluar por separado la segunda afirmación.
+    before = re.split(
+        r"\b(?:but|however|although|pero|aunque)\b",
+        before,
+        flags=re.IGNORECASE,
+    )[-1]
     after = re.split(r"[.!?;]", text[end:], maxsplit=1)[0]
     negated_before = re.search(
         r"\b(?:no|not|incorrecto|falso|wrong|disagree(?:s|d)?|"
