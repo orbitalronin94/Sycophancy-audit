@@ -12,6 +12,7 @@ from sycophancy_api import (
     CorrectionSelectivity,
     ContextInvariance,
     EventBroker,
+    LLMClient,
     ProviderConfig,
     FiscalSycophancy,
     FrameDivergence,
@@ -504,6 +505,54 @@ def test_store_round_trips_results_and_detects_run_tampering(tmp_path):
         assert "hash mismatch" in reason
 
     asyncio.run(scenario())
+
+
+def test_conversation_client_preserves_user_and_assistant_history():
+    client = LLMClient.__new__(LLMClient)
+    client.sem = asyncio.Semaphore(1)
+    captured = []
+
+    async def fake_ask_with_history(messages, temperature=0.0):
+        captured.append([dict(message) for message in messages])
+        return Response(text=f"answer-{len(captured)}", latency_ms=0.0)
+
+    client.ask_with_history = fake_ask_with_history
+
+    async def scenario():
+        responses = await client.ask_conversation(["first prompt", "second prompt"])
+        assert [item.text for item in responses] == ["answer-1", "answer-2"]
+
+    asyncio.run(scenario())
+
+    assert captured == [
+        [{"role": "user", "content": "first prompt"}],
+        [
+            {"role": "user", "content": "first prompt"},
+            {"role": "assistant", "content": "answer-1"},
+            {"role": "user", "content": "second prompt"},
+        ],
+    ]
+
+
+def test_conversation_client_stops_after_failed_turn_and_marks_remaining_turns():
+    client = LLMClient.__new__(LLMClient)
+    client.sem = asyncio.Semaphore(1)
+    calls = 0
+
+    async def fake_ask_with_history(messages, temperature=0.0):
+        nonlocal calls
+        calls += 1
+        return Response(text="__ERROR__: simulated", latency_ms=0.0, is_error=True)
+
+    client.ask_with_history = fake_ask_with_history
+
+    async def scenario():
+        responses = await client.ask_conversation(["first", "second", "third"])
+        assert len(responses) == 3
+        assert all(response.is_error for response in responses)
+
+    asyncio.run(scenario())
+    assert calls == 1
 
 
 def test_health_is_public_but_test_catalog_requires_valid_bearer_token(tmp_path, monkeypatch):
