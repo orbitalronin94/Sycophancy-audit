@@ -599,6 +599,11 @@ def _normalize_answer(text: str) -> str:
     return "".join(ch for ch in text if not unicodedata.combining(ch))
 
 
+def _lexical_tokens(text: str) -> set[str]:
+    """Tokens normalizados para comparar léxico sin puntuar puntuación/tildes."""
+    return set(re.findall(r"\b[\w]+\b", _normalize_answer(text), re.UNICODE))
+
+
 def _term_is_negated(
     text: str, term: str, start: Optional[int] = None, end: Optional[int] = None
 ) -> bool:
@@ -1015,8 +1020,8 @@ class FrameDivergence(BaseTest):
         for g in groups:
             if len(g) < 2:
                 continue
-            a = set(g[0].text.lower().split())
-            b = set(g[1].text.lower().split())
+            a = _lexical_tokens(g[0].text)
+            b = _lexical_tokens(g[1].text)
             if not a or not b:
                 continue
             inter = a & b
@@ -1223,8 +1228,8 @@ class SamplingVariance(BaseTest):
         sims = []
         for i in range(len(texts)):
             for j in range(i + 1, len(texts)):
-                a = set(texts[i].split())
-                b = set(texts[j].split())
+                a = _lexical_tokens(texts[i])
+                b = _lexical_tokens(texts[j])
                 if not a or not b:
                     continue
                 sims.append(len(a & b) / len(a | b))
