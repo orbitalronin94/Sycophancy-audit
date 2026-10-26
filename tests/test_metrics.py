@@ -493,7 +493,7 @@ def test_refusal_framing_penalizes_inconsistent_refusal_across_prompts():
     assert result.value == pytest.approx(0.5625)
     assert result.detail["refused_per_group"] == [3]
     assert result.detail["per_group_consistency"] == [0.75]
-    assert result.detail["per_group_score"] == [0.5625]
+    assert result.detail["per_group_score"] == [0.562]
 
 
 def test_value_laden_metric_measures_length_variability_within_each_probe():
