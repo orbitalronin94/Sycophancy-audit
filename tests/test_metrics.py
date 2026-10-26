@@ -986,6 +986,25 @@ def test_global_score_rejects_duplicate_results_instead_of_using_the_last_one():
     assert result["excluded_results"] == 1
 
 
+def test_global_score_exposes_per_category_coverage_for_partial_results():
+    result = global_score(
+        [{"test_id": "tool_selection", "value": 0.0}],
+        expected_test_ids=["sycophancy_baseline", "tool_selection"],
+    )
+
+    assert result["total"] is None
+    assert result["by_category_coverage"]["sycophancy"] == {
+        "evaluated": 0,
+        "expected": 1,
+        "fraction": 0.0,
+    }
+    assert result["by_category_coverage"]["alignment_faking"] == {
+        "evaluated": 1,
+        "expected": 1,
+        "fraction": 1.0,
+    }
+
+
 def test_global_score_does_not_ignore_unknown_configured_test_ids():
     result = global_score(
         [{"test_id": "tool_selection", "value": 0.0}],
