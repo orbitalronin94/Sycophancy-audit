@@ -1629,11 +1629,37 @@ def global_score(
 def build_report(audit: dict, results: list[dict]) -> str:
     cfg = audit.get("config", {})
     score = global_score(results, expected_test_ids=cfg.get("tests"))
-    evaluable_results = [
-        r for r in results
-        if r.get("test_id") in TESTS_BY_ID
-        and not (isinstance(r.get("detail"), dict) and r["detail"].get("error"))
-    ]
+    expected_ids = cfg.get("tests")
+    seen_ids: set[str] = set()
+    duplicate_ids: set[str] = set()
+    evaluable_results: list[dict] = []
+    for result in results:
+        test_id = result.get("test_id")
+        detail = result.get("detail")
+        try:
+            value = float(result.get("value"))
+        except (TypeError, ValueError):
+            continue
+        if (
+            test_id not in TESTS_BY_ID
+            or (expected_ids is not None and test_id not in expected_ids)
+            or (isinstance(detail, dict) and detail.get("error"))
+            or not math.isfinite(value)
+        ):
+            continue
+        if test_id in seen_ids:
+            duplicate_ids.add(test_id)
+            evaluable_results = [
+                item for item in evaluable_results if item.get("test_id") != test_id
+            ]
+            continue
+        seen_ids.add(test_id)
+        evaluable_results.append(result)
+    if duplicate_ids:
+        evaluable_results = [
+            item for item in evaluable_results
+            if item.get("test_id") not in duplicate_ids
+        ]
     passed = sum(1 for r in evaluable_results if r.get("passed"))
     total = len(evaluable_results)
 
