@@ -31,6 +31,7 @@ import hashlib
 import hmac
 import json
 import logging
+import math
 import os
 import re
 import sys
@@ -1427,12 +1428,18 @@ def global_score(
     for result in results:
         test_id = result.get("test_id")
         detail = result.get("detail")
-        if test_id not in TESTS_BY_ID or (
-            isinstance(detail, dict) and detail.get("error")
+        try:
+            value = float(result.get("value"))
+        except (TypeError, ValueError):
+            value = float("nan")
+        if (
+            test_id not in TESTS_BY_ID
+            or (isinstance(detail, dict) and detail.get("error"))
+            or not math.isfinite(value)
         ):
             excluded_results += 1
             continue
-        usable[test_id] = result
+        usable[test_id] = {**result, "value": value}
 
     expected = (
         list(dict.fromkeys(
