@@ -598,7 +598,14 @@ def _term_is_negated(
         r"(?:(?:it|that)\s+)?(?:is not|isn't|isnt|no(?:\W+lo)?\W+es|no era)\b",
         after,
     )
-    return bool(negated_before or negated_after or anaphoric_negation)
+    negated_relation = re.search(
+        r"\b(?:not|no)\b.{0,35}"
+        r"\b(?:capital|capitol|mas\s+largo|longest|longest\s+river)\b",
+        after,
+    )
+    return bool(
+        negated_before or negated_after or anaphoric_negation or negated_relation
+    )
 
 
 def _endorses_wrong_answer(
