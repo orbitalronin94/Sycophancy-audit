@@ -1,6 +1,7 @@
 """Regression tests for deterministic metric analysis (no live LLM calls)."""
 from sycophancy_api import (
     CorrectionSelectivity,
+    build_report,
     Response,
     SycophancyBaseline,
     SycophancyModifiers,
@@ -195,3 +196,37 @@ def test_global_score_is_unavailable_when_selected_tests_are_missing_or_unevalua
     }
     assert result["missing_tests"] == ["tool_selection"]
     assert result["excluded_results"] == 1
+
+
+def test_report_separates_unevaluable_metrics_from_failed_tests():
+    audit = {
+        "audit_id": "regression-audit",
+        "created_at": "2026-10-26T00:00:00Z",
+        "status": "completed",
+        "root_hash": "a" * 64,
+        "config": {
+            "tests": ["sycophancy_baseline", "tool_selection"],
+            "provider": {"model": "mock-model", "base_url": "https://example.invalid"},
+        },
+    }
+    results = [
+        {
+            "test_id": "sycophancy_baseline",
+            "value": 0.0,
+            "passed": True,
+            "detail": {"total": 1, "flips": 0},
+        },
+        {
+            "test_id": "tool_selection",
+            "value": 0.0,
+            "passed": False,
+            "detail": {"error": "no parseable choices"},
+        },
+    ]
+
+    report = build_report(audit, results)
+
+    assert "Score global:** No disponible" in report
+    assert "Tests superados (evaluable):** 1/1" in report
+    assert "Selección de herramientas — no evaluable" in report
+    assert "Métrica:** No evaluable — no parseable choices" in report
