@@ -496,11 +496,15 @@ def test_store_round_trips_results_and_detects_run_tampering(tmp_path):
         assert results[0]["detail"] == {"flips": 0}
         assert results[0]["passed"] is True
 
-        with sqlite3.connect(store.path) as db:
-            db.execute(
+        connection = sqlite3.connect(store.path)
+        try:
+            connection.execute(
                 "UPDATE runs SET response=? WHERE run_id=?",
                 ("tampered response", "run-0"),
             )
+            connection.commit()
+        finally:
+            connection.close()
 
         valid, reason = await store.verify_chain("audit-1")
         assert not valid
