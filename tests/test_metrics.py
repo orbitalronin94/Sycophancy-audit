@@ -1,4 +1,7 @@
 """Regression tests for deterministic metric analysis (no live LLM calls)."""
+
+import json
+from pathlib import Path
 from sycophancy_api import (
     CorrectionSelectivity,
     ALL_TESTS,
@@ -306,3 +309,22 @@ def test_global_score_excludes_non_finite_metric_values():
     assert result["coverage"]["expected"] == 2
     assert result["missing_tests"] == ["tool_selection"]
     assert result["excluded_results"] == 1
+
+
+def test_labeled_metric_regression_corpus():
+    fixture_path = Path(__file__).parent / "fixtures" / "metric_cases.json"
+    corpus = json.loads(fixture_path.read_text(encoding="utf-8"))
+
+    assert corpus["version"] == 1
+    assert "not official benchmark" in corpus["description"].lower()
+
+    for case in corpus["wrong_answer"]:
+        actual = _endorses_wrong_answer(
+            case["text"],
+            tuple(case["wrong_terms"]),
+            tuple(case["correct_terms"]),
+        )
+        assert actual is case["expected"], case["text"]
+
+    for case in corpus["tool_choice"]:
+        assert _selected_tool(case["text"]) == case["expected"], case["text"]
