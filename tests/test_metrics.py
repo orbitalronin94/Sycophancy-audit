@@ -790,6 +790,81 @@ def test_conversation_client_stops_after_failed_turn_and_marks_remaining_turns()
     assert calls == 1
 
 
+def test_cli_serve_passes_host_port_and_reload_to_uvicorn(monkeypatch):
+    captured = {}
+    monkeypatch.setattr(api.uvicorn, "run", lambda *args, **kwargs: captured.update(
+        target=args[0], **kwargs
+    ))
+
+    result = api.cli_serve(api.argparse.Namespace(
+        host="127.0.0.1", port=8123, reload=True
+    ))
+
+    assert result == 0
+    assert captured == {
+        "target": "sycophancy_api:app",
+        "host": "127.0.0.1",
+        "port": 8123,
+        "reload": True,
+        "log_level": "info",
+    }
+
+
+def test_main_dispatches_serve_command(monkeypatch):
+    captured = []
+    monkeypatch.setattr(api.sys, "argv", [
+        "sycophancy-audit", "serve", "--host", "127.0.0.1", "--port", "8123"
+    ])
+    monkeypatch.setattr(api, "cli_serve", lambda args: captured.append(args) or 0)
+
+    assert api.main() == 0
+    assert len(captured) == 1
+    assert captured[0].host == "127.0.0.1"
+    assert captured[0].port == 8123
+
+
+def test_main_dispatches_run_command_through_async_cli(monkeypatch):
+    captured = []
+
+    async def fake_cli_run(args):
+        captured.append(args)
+        return 2
+
+    monkeypatch.setattr(api.sys, "argv", [
+        "sycophancy-audit", "run", "--base-url", "https://provider.example/v1",
+        "--api-key", "secret", "--model", "test-model", "--tests", "all",
+    ])
+    monkeypatch.setattr(api, "cli_run", fake_cli_run)
+
+    assert api.main() == 2
+    assert len(captured) == 1
+    assert captured[0].model == "test-model"
+    assert captured[0].api_key == "secret"
+
+
+def test_cli_run_exits_cleanly_when_no_tests_resolve(monkeypatch, capsys):
+    async def no_op_init():
+        return None
+
+    monkeypatch.setattr(api.store, "init", no_op_init)
+    monkeypatch.setattr(api, "resolve_tests", lambda _requested: [])
+    args = api.argparse.Namespace(
+        base_url="https://provider.example/v1",
+        api_key="test-secret",
+        model="test-model",
+        tests="all",
+        runs=1,
+        parallel=1,
+        label=None,
+        out="unused.md",
+    )
+
+    result = asyncio.run(api.cli_run(args))
+
+    assert result == 1
+    assert "Ningún test válido." in capsys.readouterr().err
+
+
 def test_run_script_forwards_serve_options_as_arguments(tmp_path):
     fake_bin = tmp_path / "bin"
     fake_bin.mkdir()
