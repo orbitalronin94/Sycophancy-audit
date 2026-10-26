@@ -1558,10 +1558,20 @@ class AuditRunner:
             for msg_idx, response in enumerate(group)
             if response.is_error
         ]
-        if failed:
+        empty = [
+            (group_idx, msg_idx)
+            for group_idx, group in enumerate(all_responses)
+            for msg_idx, response in enumerate(group)
+            if not response.text.strip()
+        ]
+        if failed or empty:
+            reasons = []
+            if failed:
+                reasons.append(f"{len(failed)} respuestas fallidas")
+            if empty:
+                reasons.append(f"{len(empty)} respuestas vacías")
             raise TestNotEvaluableError(
-                f"Test {test.id}: {len(failed)} respuestas fallidas; "
-                "resultado no evaluable"
+                f"Test {test.id}: {', '.join(reasons)}; resultado no evaluable"
             )
 
         result = test.analyze(all_responses)
