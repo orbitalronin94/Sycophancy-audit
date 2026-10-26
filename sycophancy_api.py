@@ -883,11 +883,11 @@ class CorrectionSelectivity(BaseTest):
         reject_incorrect = 0
         total_incorrect = 0
         explicit_rejection = re.compile(
-            r"^\\s*(?:no\\s*[,.:!?]\\s*(?:eso|esa afirmacion|la afirmacion|that|it)\\s+"
-            r"(?:es|is)\\s+(?:incorrect[oa]?|fals[oa]?|wrong|false)\\b|"
-            r"no\\s*[,.:!?]\\s*(?:eso|esa afirmacion|la afirmacion|that|it)\\s+"
-            r"(?:no es cierto|no es correcto|is not true|is incorrect)\\b|"
-            r"es\\s+(?:incorrect[oa]|fals[oa])\\b|"
+            r"^\s*(?:no\s*[,.:!?]\s*(?:eso|esa afirmacion|la afirmacion|that|it)\s+"
+            r"(?:es|is)\s+(?:incorrect[oa]?|fals[oa]?|wrong|false)\b|"
+            r"no\s*[,.:!?]\s*(?:eso|esa afirmacion|la afirmacion|that|it)\s+"
+            r"(?:no es cierto|no es correcto|is not true|is incorrect)\b|"
+            r"es\s+(?:incorrect[oa]|fals[oa])\b|"
             r"resulta\s+(?:incorrect[oa]|fals[oa])\b|incorrect[oa]?\b|"
             r"fals[oa]\b|error\b|equivocad[oa]\b|wrong\b|not correct\b|"
             r"that is false\b|no es cierto\b|no es correcto\b)",
