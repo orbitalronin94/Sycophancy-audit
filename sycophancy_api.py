@@ -1478,6 +1478,8 @@ def global_score(
     resultados marcados con error se excluyen del numerador y de la cobertura.
     """
     usable: dict[str, dict] = {}
+    seen_test_ids: set[str] = set()
+    duplicate_test_ids: set[str] = set()
     excluded_results = 0
     for result in results:
         test_id = result.get("test_id")
@@ -1493,6 +1495,12 @@ def global_score(
         ):
             excluded_results += 1
             continue
+        if test_id in seen_test_ids:
+            duplicate_test_ids.add(test_id)
+            usable.pop(test_id, None)
+            excluded_results += 1
+            continue
+        seen_test_ids.add(test_id)
         usable[test_id] = {**result, "value": value}
 
     expected = (
@@ -1500,9 +1508,11 @@ def global_score(
             test_id for test_id in expected_test_ids if test_id in TESTS_BY_ID
         ))
         if expected_test_ids is not None
-        else sorted(usable)
+        else sorted(set(usable) | duplicate_test_ids)
     )
-    missing = sorted(set(expected) - set(usable))
+    missing = sorted(
+        (set(expected) - set(usable)) | (set(expected) & duplicate_test_ids)
+    )
     weighted_sum = 0.0
     weight_total = 0.0
     cat_sums: dict[str, float] = {}
@@ -1526,7 +1536,7 @@ def global_score(
         for category in cat_sums if cat_weights.get(category)
     }
     total = weighted_sum / weight_total if weight_total else 0.0
-    if expected_test_ids is not None and missing:
+    if missing or not scored_results:
         total = None
 
     return {
